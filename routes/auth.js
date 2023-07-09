@@ -110,7 +110,7 @@ router.post('/login' , async (req , res) =>{
 })
 
 router.get('/logout', accessTokenValidator , (req , res) =>{
-    
+        
     try {
         console.log("before" , req.headers);
         delete req.headers.authorization;
@@ -124,8 +124,6 @@ router.get('/logout', accessTokenValidator , (req , res) =>{
     }
 
 })
-
-
 
 
 module.exports = router;
