@@ -46,9 +46,14 @@ router.post('/add-new-note' , accessTokenValidator , async (req , res) =>{
     }
 })
 
-router.delete('/delete-a-note/:note_id' , accessTokenValidator , async (req , res) =>{
+router.delete('/delete-a-note/:note_id' , accessTokenValidator , async (req , res) => {
 
     const {note_id} = req.params;
+    const validUUIDv4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!validUUIDv4Regex.test(note_id)) {
+    return res.status(400).json({ error: 'Invalid note_id parameter' });
+    }
 
     try {
 
@@ -70,6 +75,11 @@ router.delete('/delete-a-note/:note_id' , accessTokenValidator , async (req , re
 
 router.post('/patch-a-note/:note_id' , accessTokenValidator , async(req , res) =>{
     const {note_id} = req.params;
+    const validUUIDv4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!validUUIDv4Regex.test(note_id)) {
+    return res.status(400).json({ error: 'Invalid note_id parameter' });
+    }
     const {updatedNote} = req.body;
 
     const note = await pool.query('SELECT * FROM notes where note_id = $1' , [note_id]);
@@ -84,4 +94,4 @@ router.post('/patch-a-note/:note_id' , accessTokenValidator , async(req , res) =
 }) 
 
 
-module.exports = router
+module.exports = router;
