@@ -2,6 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../db');
+const accessTokenValidator = require('../middlewares/accessTokenValidator');
 require('dotenv');
 
 router.post('/register' , async (req , res) => {
@@ -106,6 +107,22 @@ router.post('/login' , async (req , res) =>{
         return res.status(500).send('Server error');
         
     }
+})
+
+router.get('/logout', accessTokenValidator , (req , res) =>{
+    
+    try {
+        console.log("before" , req.headers);
+        delete req.headers.authorization;
+        console.log("after" , req.headers);
+
+        return res.status(200).send('Logged out successfully');
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    }
+
 })
 
 
