@@ -1,30 +1,32 @@
 const router = require('express').Router();
 const accessTokenValidator = require('../middlewares/accessTokenValidator');
 const pool = require('../db');
+const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
 
-router.get('/' , accessTokenValidator , async (req , res) =>{
+router.get('/' , accessTokenValidator, refreshTokenValidator,  async (req , res) =>{
 
-    const {user}  = req;
+    const {customer}  = req;
+    const {accessToken} = req;
 
     try {
         
-        const userQuery = await pool.query('SELECT * FROM notes WHERE user_id = $1' , [user.id]);
+        const customerQuery = await pool.query('SELECT * FROM notes WHERE customer_id = $1' , [customer.id]);
 
-        console.log(userQuery.rows);
+        console.log(customerQuery.rows);
         
 
         /*for (let i = 0; i < userQuery.rows.length; i++){
             userNotes.push(userQuery.rows[i].user_note)
         }*/
-        const userNotes = userQuery.rows.map((row) => ({
+        const userNotes = customerQuery.rows.map((row) => ({
             note_id: row.note_id,
             note: row.user_note,
         }));
 
           
         
-        return res.status(200).json(userNotes);
+        return res.status(200).json({userNotes : userNotes , accessToken : accessToken});
         
     } catch (error) {
         console.error(error);
@@ -53,6 +55,7 @@ router.delete('/delete-a-note/:note_id' , accessTokenValidator , async (req , re
 
     if (!validUUIDv4Regex.test(note_id)) {
     return res.status(400).json({ error: 'Invalid note_id parameter' });
+    
     }
 
     try {

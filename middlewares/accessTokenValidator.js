@@ -8,17 +8,17 @@ const accessTokenValidator = (req, res, next) => {
         return res.status(401).json({ message: 'User not logged in' });
     }
 
-    jwt.verify(token, "miyav", (err, user) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, customer) => {
         if (err) {
             console.log(err);
-            // if the error is because of token expiration, return 401, else return 400
+            //  token süresi geçtiyse, return 401, else return 400
             const statusCode = err.name === 'TokenExpiredError' ? 401 : 400;
             return res.status(statusCode).json({ err });
         }
 
-        console.log("HERE IS THE USER AFTER JWT VERIFY" , user) ;
+        console.log("HERE IS THE customer AFTER JWT VERIFY" , customer) ;
 
-        req.user = user;
+        req.customer = customer;
         next();
     });
 }

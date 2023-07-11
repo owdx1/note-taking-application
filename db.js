@@ -5,7 +5,7 @@ const pool = new Pool({
   password: "o547988633",
   host: "localhost",
   port:"5432",
-  database: "ecommerce"  
+  database: "vobe_ecom"  
 });
 
 module.exports = pool;
