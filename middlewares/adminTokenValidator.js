@@ -18,7 +18,7 @@ const adminTokenValidator = (req, res, next) => {
 
         console.log("HERE IS THE admin AFTER JWT VERIFY" , admin); // bu silinecek
 
-        req.admin = admin; // token geçerli ise, kullanıcının tüm bilgilerini req.customer'e yolluyoruz
+        req.admin = admin; // token geçerli ise, kullanıcının tüm bilgilerini req.admine'e yolluyoruz
         next();
     });
 }

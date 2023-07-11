@@ -1,7 +1,9 @@
-const router = require('express').Router();
 const accessTokenValidator = require('../middlewares/accessTokenValidator');
-const pool = require('../db');
 const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
+
+const router = require('express').Router();
+const pool = require('../db');
+
 
 
 router.get('/' , accessTokenValidator, refreshTokenValidator,  async (req , res) =>{
