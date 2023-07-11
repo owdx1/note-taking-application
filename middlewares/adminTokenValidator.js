@@ -1,14 +1,14 @@
 const jwt = require('jsonwebtoken');
 
-const accessTokenValidator = (req, res, next) => {
+const adminTokenValidator = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: 'User not logged in' });
+        return res.status(401).json({ message: 'Admin not logged in' });
     }
 
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, customer) => {
+    jwt.verify(token, process.env.ADMIN_TOKEN_SECRET, (err, admin) => {
         if (err) {
             console.log(err);
             //  token süresi geçtiyse, return 401, else return 400
@@ -16,11 +16,11 @@ const accessTokenValidator = (req, res, next) => {
             return res.status(statusCode).json({ err });
         }
 
-        console.log("HERE IS THE customer AFTER JWT VERIFY" , customer); // bu silinecek
+        console.log("HERE IS THE admin AFTER JWT VERIFY" , admin); // bu silinecek
 
-        req.customer = customer; // token geçerli ise, kullanıcının tüm bilgilerini req.customer'e yolluyoruz
+        req.admin = admin; // token geçerli ise, kullanıcının tüm bilgilerini req.customer'e yolluyoruz
         next();
     });
 }
 
-module.exports = accessTokenValidator;
+module.exports = adminTokenValidator;
