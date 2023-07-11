@@ -21,7 +21,7 @@ router.get('/' , accessTokenValidator, refreshTokenValidator,  async (req , res)
         }*/
         const userNotes = customerQuery.rows.map((row) => ({
             note_id: row.note_id,
-            note: row.user_note,
+            note: row.note,
         }));
 
           
@@ -34,13 +34,14 @@ router.get('/' , accessTokenValidator, refreshTokenValidator,  async (req , res)
     }
 })
 
-router.post('/add-new-note' , accessTokenValidator , async (req , res) =>{
-    const {user} = req;
+router.post('/add-new-note' , accessTokenValidator, refreshTokenValidator, async (req , res) =>{
+    const {customer} = req;
     const {note} = req.body;
+    const {accessToken} = req;
     try {
-        await pool.query("INSERT INTO notes (user_id , user_note) values ($1 , $2)",  [user.id , note])
+        await pool.query("INSERT INTO notes (customer_id, note) values ($1 , $2)",  [customer.id , note])
 
-        return res.status(200).send('Note added successfully: ');
+        return res.status(200).json({message: 'Note added successfully!' , accessToken: accessToken});
         
     } catch (error) {
         console.error(error);
@@ -48,7 +49,7 @@ router.post('/add-new-note' , accessTokenValidator , async (req , res) =>{
     }
 })
 
-router.delete('/delete-a-note/:note_id' , accessTokenValidator , async (req , res) => {
+router.delete('/delete-a-note/:note_id' , accessTokenValidator, refreshTokenValidator,  async (req , res) => {
 
     const {note_id} = req.params;
     const validUUIDv4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

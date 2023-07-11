@@ -43,51 +43,15 @@ router.post('/register' , async (req , res) => {
         await pool.query('INSERT INTO customers (first_name, last_name, email, address, city, postal_code, country, password)  VALUES ($1, $2,$3,$4,$5,$6,$7,$8)', 
             [firstname, lastname, email, address, city, postalcode, country, bcryptPassword]);
 
-        const newCustomer = await pool.query('SELECT * FROM customers WHERE password = $1' , [bcryptPassword]);
+        return res.status(200).send('Registered successfully!');
 
-        const payload = {
-            email: newCustomer.rows[0].email,
-            id: newCustomer.rows[0].customer_id, 
-            
-            // databasede id diye mi kayıtlı bilmiyorum buraya bakılması lazım. (baktım , customer_id)
-            // bu işlem sayesinde token'a kullanıcının emaili ve idsini koyuyoruz. yani tokenin olduğu yerde kullanıcının bilgileri kesin var
-        }
-
-        const accessToken = jwt.sign(payload , process.env.ACCESS_TOKEN_SECRET, {expiresIn: "1h"}); 
-        // refresh yoksa accesstoken 1 saat sonra bitecek 
-        console.log(accessToken); // bu ileride kaldırılmalı
-
-        const refreshToken = jwt.sign(payload , process.env.REFRESH_TOKEN_SECRET);
-        // refresh token oluşturulduktan sonra, database'e kaydedilmesi gerekli. 
-
-        await pool.query('INSERT INTO refresh_tokens (customer_id , refreshtoken) values ($1 , $2)' , [newCustomer.rows[0].customer_id , refreshToken]);
-
-        // kullanıcı siteye kayıt yaptırır yaptırmaz siteye giriş yapmasını istediğimden dolayı register route'unda dahi olsa kullanıcıya
-        // yeni bir access ve refresh token veriyoruz, sıkıntı çıkarması halinde auto-login işlemlerini kaldırabiliriz.
-
-
-        /* return res.redirect('/auth/auto-login', {
-            headers: {
-            Authorization: `Bearer ${accessToken}`
-            }
-        }); */
-
-        return res.redirect(302, '/auth/auto-login').set('Authorization', `Bearer ${accessToken}`);
+        //auto-login işlemleri kaldırıldı
 
         
     } catch (error) {
         console.error(error);
         return res.status(500).send('Server error');
     }
-});
-
-router.get('/auto-login', accessTokenValidator, refreshTokenValidator, (req , res) => {
-    
-    const {user} = req;
-    const {accessToken} = req;
-
-    return res.json({user : user , accessToken , accessToken});
-
 });
 
 
@@ -141,12 +105,13 @@ router.post('/login' , async (req , res) =>{
     }
 })
 
-router.get('/logout', accessTokenValidator , (req , res) =>{
+router.get('/logout', accessTokenValidator, refreshTokenValidator, async (req , res) =>{
+
+        const {id}  = req.customer;
         
     try {
-        console.log("before" , req.headers);
-        delete req.headers.authorization;
-        console.log("after" , req.headers);
+        
+        await pool.query('DELETE FROM refresh_tokens WHERE customer_id = $1' , [id])
 
         return res.status(200).send('Logged out successfully');
         
