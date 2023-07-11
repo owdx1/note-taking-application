@@ -61,8 +61,7 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
         const products = await pool.query('SELECT * FROM products');
         // bu dashboard'da toplam satılan ürün sayısı, kazanılan toplam miktar, ve ürünlerin bulunduğu bir sekme yer alacak. 
 
-        
-
+    
 
 
 
@@ -109,7 +108,7 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
     }
 })
 
-adminRouter.post('/patch-a-note/:note_id' , adminTokenValidator , async (req , res) => {
+adminRouter.post('/patch-a-note/:product_id' , adminTokenValidator , async (req , res) => {
     const {product_id} = req.params;
 
     const { product_name,
