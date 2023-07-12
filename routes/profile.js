@@ -43,7 +43,8 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const {customer} = req;
         const customer_id = customer.id;
         const {accessToken} = req;
-        const orders = await pool.query('SELECT * FROM orders WHERE customer_id = $1' , [customer_id]);
+        
+        const orders = await pool.query('SELECT * FROM orders WHERE customer_id = $1' , [customer_id]);//siparişleri listeler
         const cartFeatures = orders.rows;
 
         return res.status(200).json({customer , cartFeatures , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
@@ -55,13 +56,24 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
     }
 })
 
-profileRouter.get('/siparislerim' , accessTokenValidator , refreshTokenValidator , async (req , res) => {
-
-    const {customer} = req;
-    const {accessToken} = req;
+profileRouter.get('/products-mine' , accessTokenValidator , refreshTokenValidator , async (req , res) => {
+    try {
     
+        const {customer} = req;
+        const {accessToken} = req;
 
-})
+        const newestOrder = await pool.query('SELECT * FROM orders ORDER BY order_date DESC WHERE customer_id=$1' , [customer.customer_id]);//en son siparişi listeler
+        const newOrderId = newestOrder.rows[0].order_id;
+        const productsInCart=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[newOrderId]);
+         return res.status(200).json(productsInCart.rows);
+    
+    }   catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+
+});
+
 
 
 
