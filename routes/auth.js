@@ -59,13 +59,13 @@ router.post('/login' , async (req , res) =>{
 
 
     try {
-        const {email , password1} = req.body;
+        const {email , password} = req.body;
     
         const customer = await pool.query(`SELECT * FROM customers WHERE email = $1` , [email]);
 
 
         if(customer.rows.length !== 0){
-            const isValid = await bcrypt.compare(password1 , customer.rows[0].password);
+            const isValid = await bcrypt.compare(password , customer.rows[0].password);
             
 
             if(!isValid){
