@@ -9,7 +9,7 @@ const pool = require('../db');
 
 adminRouter.post('/login' ,  (req , res) => {
     const {username , password} = req.body;
-
+    console.log(process.env.ADMIN_USERNAME, process.env.ADMIN_PASSWORD);
     if(username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD){
         res.status(401).send('Unauthorized access');
     }
@@ -21,7 +21,8 @@ adminRouter.post('/login' ,  (req , res) => {
     
     res.status(200).json({message: "admin successfully logged in" , adminToken : adminToken})
 
-})
+});
+// admin logout front endde gerçekleştirilecek
 
 adminRouter.post('/add-a-product' , adminTokenValidator , async (req , res) => {
     const {admin} = req;
@@ -58,14 +59,11 @@ adminRouter.post('/add-a-product' , adminTokenValidator , async (req , res) => {
 adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
     const {admin} = req;
     try {
-        const products = await pool.query('SELECT * FROM products');
-        // bu dashboard'da toplam satılan ürün sayısı, kazanılan toplam miktar, ve ürünlerin bulunduğu bir sekme yer alacak. 
+        const productsAll = await pool.query('SELECT * FROM products');
+        // bu dashboard'da toplam satılan ürün sayısı, kazanılan toplam miktar, ve ürünlerin bulunduğu bir sekme yer alacak.
+        const products  = productsAll.rows;
 
-    
-
-
-
-        res.status(200).json(products.rows, admin); 
+        res.status(200).json({products , admin}); 
     } catch (error) {
         console.error(error);
         return res.status(500).send('Server error');
@@ -108,7 +106,7 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
     }
 })
 
-adminRouter.post('/patch-a-note/:product_id' , adminTokenValidator , async (req , res) => {
+adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {
     const {product_id} = req.params;
 
     const { product_name,
@@ -131,7 +129,13 @@ adminRouter.post('/patch-a-note/:product_id' , adminTokenValidator , async (req 
     [ product_name, category_id, price, quantity, color, size, pattern, description, product_id]);
 
     return res.status(200).json({message: 'Product updated successfully'});
-}) 
+});
+
+adminRouter.get('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {
+    const {product_id} = req.params;
+    console.log(product_id);
+
+}) // buna gerek var mı bakacaz
 
 
 
