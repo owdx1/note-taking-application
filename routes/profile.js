@@ -26,7 +26,7 @@ profileRouter.get('/' , accessTokenValidator, refreshTokenValidator , async (req
         // kullanıcı profile girdikten sonra, siparişlerim, kartım diye iki buton olacak
 
         return res.status(200).json({customer , accessToken:accessToken});
-
+        
         
     } catch (error) {
         console.error(error);
