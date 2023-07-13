@@ -7,7 +7,7 @@ shopRouter.get('/' , async (req , res) => {
 
     try {
 
-        const rawData = await pool.query('SELECT * FROM products where quantity > 0');
+        const rawData = await pool.query('SELECT * FROM products');
         const data = rawData.rows;
 
         return res.status(200).json({data})
@@ -19,17 +19,6 @@ shopRouter.get('/' , async (req , res) => {
         return res.status(500).json({message: "An error occured while fetching the products where quantity > 0"})
         
     }
-
-    
-
-    
-
-
-
-
-    
-
-
 
 })
 
