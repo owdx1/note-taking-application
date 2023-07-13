@@ -16,9 +16,9 @@ const accessTokenValidator = (req, res, next) => {
             return res.status(statusCode).json({ err });
         }
 
-        console.log("HERE IS THE customer AFTER JWT VERIFY" , customer); // bu silinecek
+        console.log("HERE IS THE customer AFTER JWT VERIFY" , customer); 
 
-        req.customer = customer; // token geçerli ise, kullanıcının tüm bilgilerini req.customer'e yolluyoruz
+        req.customer = customer; 
         next();
     });
 }
