@@ -7,8 +7,11 @@ Kullanıcı:
 
 
 const shopRouter = require('express').Router();
+const { raw } = require('mysql');
+const pool = require('../db');
 
 
+<<<<<<< HEAD
 const pool = require('../db');
 const accessTokenValidator = require('../middlewares/accessTokenValidator');
 const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
@@ -113,6 +116,25 @@ shopRouter.put('/update-quantity/:product_id',accessTokenValidator,refreshTokenV
 shopRouter.post('/' ,accessTokenValidator,refreshTokenValidator, (req , res) =>{
     
     res.status(200).send('hi');
+=======
+shopRouter.get('/' , async (req , res) => {
+
+    try {
+
+        const rawData = await pool.query('SELECT * FROM products');
+        const data = rawData.rows;
+
+        return res.status(200).json({data})
+
+
+    } catch (error) {
+        console.error(error);
+        
+        return res.status(500).json({message: "An error occured while fetching the products where quantity > 0"})
+        
+    }
+
+>>>>>>> 40e17eae0865cf2a869ec721c7f1e00188c469d0
 })
 
 module.exports = shopRouter;
