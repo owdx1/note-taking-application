@@ -7,12 +7,12 @@ Kullanıcı:
 
 
 const shopRouter = require('express').Router();
-const { raw } = require('mysql');
-const pool = require('../db');
-
-
 
 const pool = require('../db');
+
+
+
+
 const accessTokenValidator = require('../middlewares/accessTokenValidator');
 const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
