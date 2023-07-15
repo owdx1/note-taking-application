@@ -78,10 +78,9 @@ router.post('/login' , async (req , res) =>{
         const payload = {
             email: customer.rows[0].email,
             id: customer.rows[0].customer_id,
-        
         }
         
-        const accessToken = jwt.sign(payload , process.env.ACCESS_TOKEN_SECRET , {expiresIn: "1hr"});
+        const accessToken = jwt.sign(payload , process.env.ACCESS_TOKEN_SECRET , {expiresIn: "15m"});
         const refreshToken = jwt.sign(payload , process.env.REFRESH_TOKEN_SECRET);
 
         const refreshTokenInDatabase = await pool.query('SELECT * from refresh_tokens where customer_id = $1' , [customer.rows[0].customer_id]);
