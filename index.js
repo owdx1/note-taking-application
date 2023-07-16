@@ -15,7 +15,6 @@ app.use('/auth' , authRouter)
 app.use('/admin' , adminRouter);
 app.use('/profile', profileRouter)
 app.use('/shop' , shopRouter)
-
 // app.use('/myNotes' , myNotesRouter)
 app.listen(5000, ()=>{
     console.log("listenin on 5000");

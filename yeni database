@@ -4,7 +4,7 @@ CREATE TABLE products (
     category_id INTEGER,
     price DECIMAL(10, 2),
 	color varchar(50),
-	
+    discount DECIMAL(10, 2) DEFAULT 0.00,
     description TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
@@ -25,7 +25,7 @@ CREATE TABLE customers (
     city VARCHAR(255),
     postal_code VARCHAR(10),
     country VARCHAR(255),
-    phone integer,
+    phone bigint,
     password varchar(255)
 );
 
@@ -42,17 +42,24 @@ CREATE TABLE order_items (
     order_id INTEGER,
     product_id INTEGER,
     quantity INTEGER,
+    pattern varchar(100),
     price DECIMAL(10, 2),
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
-create table feature(
-	product_id integer,
-	size varchar(20),
-	size_i integer,
-	pattern varchar(100),
-	quantity integer,
-	FOREIGN KEY (product_id) REFERENCES products(product_id) 
+CREATE TABLE feature (
+    feature_id SERIAL PRIMARY KEY,
+    product_id INTEGER,
+    size VARCHAR(20),
+    size_i INTEGER,
+    quantity INTEGER,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+);
 
+create table refresh_tokens(
+customer_id integer,
+refreshtoken varchar(255),
+primary key (customer_id , refrestoken),
+foreign key (customer_id) references customers (customer_id)
 )
