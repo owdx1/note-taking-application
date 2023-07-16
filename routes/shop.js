@@ -193,7 +193,7 @@ shopRouter.get('/' , async (req , res) => {
 
 
 });
-shopRouter.get('/:product_id',async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
+shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
     try {
         const{product_id}=req.params;
         const rawData = await pool.query('SELECT * FROM products P,feature F WHERE P.product_id=$1 AND F.product_id=P.product_id',[product_id]);

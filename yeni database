@@ -60,6 +60,6 @@ CREATE TABLE feature (
 create table refresh_tokens(
 customer_id integer,
 refreshtoken varchar(255),
-primary key (customer_id , refrestoken),
+primary key (customer_id , refrestoken), --> burada yazım hatası vardı refrestoken --> refreshtoken
 foreign key (customer_id) references customers (customer_id)
 )
