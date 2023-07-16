@@ -24,7 +24,7 @@ adminRouter.post('/login' ,  (req , res) => {
 });
 // admin logout front endde gerçekleştirilecek
 
-adminRouter.post('/add-a-product'  , async (req , res) => {
+adminRouter.post('/add-a-product' ,adminTokenValidator , async (req , res) => {
     const {admin} = req;
     console.log(admin); // bu admin bilgilerini içeren kısım, customer bilgilerine ihtiyacımız var ama admin bilgilerine ihtiyacımız tam
                         // anlamıyla yok çünkü adminin kim olduğunu ve bilgilerini biliyoruz zaten. customer için kesinlikle yapılması
@@ -34,19 +34,12 @@ adminRouter.post('/add-a-product'  , async (req , res) => {
         const { product_name,
             category_id,
             price,
+            pattern,
             color,
             description ,
             size,quantity,
         } = req.body;
 
-
-        // feature_id
-        //XS -> 1
-        //S->2
-        //M -> 3
-        // L->4
-        // XL ->5
-        // XXL ->6
         
        /* const avilableProduct=await pool.query("SELECT * from products where product_id=$1 ",[product_id]);
         const newQuery = (category_id == 2) ? 
@@ -55,12 +48,13 @@ adminRouter.post('/add-a-product'  , async (req , res) => {
                 :
             await pool.query("INSERT INTO products (product_name, category_id, price, color, pattern, description) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
                 [product_name,category_id,price ,color  ,pattern ,description]);
-            */  await pool.query("INSERT INTO products (product_name, category_id, price, color, description) VALUES($1,$2,$3,$4,$5) RETURNING *",
+            */  
+           await pool.query("INSERT INTO products (product_name, category_id, price, color, description) VALUES($1,$2,$3,$4,$5) RETURNING *",
             [product_name,category_id,price ,color   ,description]);
             const product_id=await pool.query("SELECT product_id FROM products WHERE product_name=$1 AND category_id=$2 AND price=$3 AND color=$4 AND description=$5",[product_name,category_id,price ,color   ,description]);
-                        const productId=product_id.rows[0].product_id;
-                        console.log(productId);
-                if(category_id==2){
+            const productId=product_id.rows[0].product_id;
+            console.log(productId);
+                if(category_id===6){
                     
                     // ürün varsa diye kontrol etmeli burda
                     await pool.query("INSERT INTO feature(product_id,size_i,quantity) values($1,$2,$3)",[productId,size,quantity]);
@@ -123,8 +117,8 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
             return res.status(404).send('Product not found');
         }
         
-        await pool.query(`DELETE FROM products WHERE product_id = $1` , [product_id]);
-        return res.status(200).send('Note deleted successfully');
+        await pool.query('DELETE FROM products WHERE product_id = $1' , [product_id]);//featureden de siler
+        return res.status(200).send('product deleted successfully');
         
     } catch (error) {
         console.error(error);
@@ -132,7 +126,7 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
     }
 })
 
-adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {
+adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {// ürünün genel özelliklerini günceller
     const {product_id} = req.params;
 
     const { product_name,
@@ -141,6 +135,7 @@ adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (r
         quantity,
         color,
         size,
+        discount,
         pattern,
         description 
     } = req.body;
@@ -151,8 +146,8 @@ adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (r
         return res.status(404).send('Note not found')
     }
 
-    await pool.query('UPDATE products SET product_name = $1, category_id = $2, price = $3, color = $4, pattern = $5, description = $6 WHERE product_id = $7' , 
-    [ product_name, category_id, price, color, pattern, description, product_id]);
+    await pool.query('UPDATE products SET product_name = $1, category_id = $2, price = $3, color = $4, pattern = $5, description = $6,discount=$8 WHERE product_id = $7' , 
+    [ product_name, category_id, price, color, pattern, description, product_id,discount]);
 
     return res.status(200).json({message: 'Product updated successfully'});
 });
@@ -167,7 +162,7 @@ adminRouter.get('/patch-a-product/:product_id/:feature_id' , adminTokenValidator
 
 }) 
 
-adminRouter.put('/product-feature/:product_id/:feature_id',adminTokenValidator,async(res,req)=>{
+adminRouter.put('/product-feature/:product_id/:feature_id',adminTokenValidator,async(res,req)=>{//ürünün alt özelliklerini günceller
     try {
         const{quantity}=req.body;
         const query=await pool.query("UPDATE feature SET quantity=$1 WHERE product_id=$2 AND feature_id=$3",[quantity,product_id,feature_id]);
@@ -182,18 +177,7 @@ adminRouter.put('/product-feature/:product_id/:feature_id',adminTokenValidator,a
 })
 
 
-adminRouter.put('/product-feature/:product_id',adminTokenValidator,async(res,req)=>{
-    try {
-        const{product_name,price,discount,description}=req.body;
-        const query=await pool.query("UPDATE product SET product_name=$1,price=$2,discount=$3,description=$4 WHERE product_id=$2 ",[product_name,price,discount,description,product_id]);
 
-        return res.status(200).json({message: 'Product updated successfully'});
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server error');
-    }
-})
 
 module.exports = adminRouter;
 
