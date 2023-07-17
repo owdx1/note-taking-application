@@ -92,14 +92,13 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
          
 
-          const priceResult=await pool.query("SELECT price from products where product_id=$1",[product_id]);
-          const price = parseFloat(priceResult.rows[0].price);// eklencek ürünün fiyatı
+
 
           const avilableProduct=await pool.query("SELECT * from order_items I, products P,feature F where P.product_id=$1 AND I.order_id=$2 AND I.product_id=P.product_id AND P.product_id=F.product_id  ",[product_id,newOrderId]);
           //!!!!!!!!!!!!!!!!!!!!
           if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekle
-            if(category===6){const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size_i) values($1,$2,$3,$4)",[newOrderId,product_id,quantity,totalAmount,size]);}
-            else{const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size) values($1,$2,$3,$4)",[newOrderId,product_id,quantity,totalAmount,size]);
+            if(category===6){const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size_i) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);}
+            else{const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);
         }
         }
           else{
