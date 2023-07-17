@@ -19,13 +19,15 @@ profileRouter.get('/' , accessTokenValidator, refreshTokenValidator , async (req
     try {
         
         const {customer} = req;
-        const {email , id} = customer;
-        const {accessToken} = req; // bunu neden aldım hatırlamıyorum
+        const {id} = customer;
+        const {accessToken} = req; 
         console.log(customer); // bu silinecek
+        
+        const customerFullyDetailed = await pool.query('Select * from customers WHERE customer_id = $1' , [id]);
 
-        // kullanıcı profile girdikten sonra, siparişlerim, kartım diye iki buton olacak
 
-        return res.status(200).json({customer , accessToken:accessToken});
+
+        return res.status(200).json({customer:customerFullyDetailed.rows[0] , accessToken:accessToken});
         
         
     } catch (error) {

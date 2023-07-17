@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 
 const accessTokenValidator = (req, res, next) => {
+    console.log("suanki header" , req.headers);
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
+    console.log("suanki token" , token);
 
     if (!token) {
         return res.status(401).json({ message: 'User not logged in' });

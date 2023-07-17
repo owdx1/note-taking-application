@@ -17,13 +17,20 @@ app.use('/auth' , authRouter)
 app.use('/admin' , adminRouter);
 app.use('/profile', profileRouter)
 app.use('/shop' , shopRouter)
-app.post('/cart-control', accessTokenValidator , refreshTokenValidator , async (req, res) =>{
-    const {customer} = req;
 
+
+app.get('/cart-control', accessTokenValidator , refreshTokenValidator , async (req, res) =>{
+    const {customer} = req;
+    //burda işlemler yapılacak, şimdilik herhangi bir sayı döndürüyorum
+
+    const data = 5;
+    return res.status(200).json({data});
+
+    
     
 })
 
 // app.use('/myNotes' , myNotesRouter)
 app.listen(5000, ()=>{
     console.log("listenin on 5000");
-})
+})  
