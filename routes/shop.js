@@ -13,6 +13,12 @@ const accessTokenValidator = require('../middlewares/accessTokenValidator');
 const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
 
+
+const axios = require('axios');
+
+
+
+
 async function getBasketItemCount(customerId) {
 
     
@@ -71,9 +77,9 @@ shopRouter.get('/basket',accessTokenValidator,refreshTokenValidator,async(req,re
 shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
 
-        const {customer}=req;
+        const {customer,accessToken}=req;
         const{id}=customer;
-        const {product_id,quantity}=req.body;//hangi ürün ve ne kadar olunduğu arayüzden alınacak ----sanırım body !!!!!!
+        const {product_id,quantity,size,totalAmount,color,category}=req.body;//hangi ürün ve ne kadar olunduğu arayüzden alınacak ----sanırım body !!!!!!
         //size de alınacak
         const query=await pool.query("SELECT * FROM orders where customer_id=$1 ",[id]);
         if(query.rows.length===0){
@@ -92,23 +98,40 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
           const avilableProduct=await pool.query("SELECT * from order_items I, products P,feature F where P.product_id=$1 AND I.order_id=$2 AND I.product_id=P.product_id AND P.product_id=F.product_id  ",[product_id,newOrderId]);
           //!!!!!!!!!!!!!!!!!!!!
           if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekle
-            const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price) values($1,$2,$3,$4)",[newOrderId,product_id,quantity,price*quantity]);
-          }
+            if(category===6){const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size_i) values($1,$2,$3,$4)",[newOrderId,product_id,quantity,totalAmount,size]);}
+            else{const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size) values($1,$2,$3,$4)",[newOrderId,product_id,quantity,totalAmount,size]);
+        }
+        }
           else{
-            //const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2", [or_id, product_id]);
-            const oldQuantityResult=await pool.query("SELECT quantity from order_items Where order_id=$1 AND product_id=$2",[newOrderId,product_id]);
-            let newPrice;
-            let newQuantity;
-            const oldQuantity=parseInt(oldQuantityResult.rows[0].quantity);
+
+            let oldQuantity; // Declare the variable outside the if block
+            let oldPrice
+        if (category === 6) {
+         const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size_i=$3", [newOrderId, product_id, size]);
+        const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2 and size_i=$3", [newOrderId, product_id,size]);
+            oldPrice=parseFloat(oldPriceResult.rows[0].price);
+          oldQuantity = parseInt(oldQuantityResult.rows[0].quantity);
+        }   else {
+          const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size=$3", [newOrderId, product_id, size]);
+          const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2 and size=$3", [newOrderId, product_id,size]);
+          oldPrice=parseFloat(oldPriceResult.rows[0].price);
+
+         oldQuantity = parseInt(oldQuantityResult.rows[0].quantity);
+        }
+
+        let newPrice;
+        let newQuantity;
             //const oldPrice = parseFloat(oldPriceResult.rows[0].price);
             newQuantity=oldQuantity+quantity;
-            newPrice = newQuantity*price;
-             const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4",[newQuantity,newPrice,product_id,newOrderId]);
-          }
+            newPrice = totalAmount+oldPrice;
+            if(category===6){const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size_i=$5",[newQuantity,newPrice,product_id,newOrderId,size]); }
+            else{const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size",[newQuantity,newPrice,product_id,newOrderId,size]);
+        }
+        }
           const productNum = await getBasketItemCount(customer.id);
            console.log("real:",productNum);
           
-          return res.status(200).json({message: 'Added in basket  successfully' , productNum: productNum});
+          return res.status(200).json({message: 'Added in basket  successfully' , productNum: productNum,accessToken:accessToken});
 
         //const idQuery=await pool.query("SELECT * FROM order_items ");
         //res.json(idQuery.rows);
@@ -170,29 +193,23 @@ shopRouter.put('/update-quantity/:product_id',accessTokenValidator,refreshTokenV
 
 
 
-shopRouter.get('/' , async (req , res) => {
-
+shopRouter.get('/', async (req, res) => {
     try {
+      const rawData = await pool.query('SELECT * FROM products');
+      const data = rawData.rows;
+  
+      
 
-        const rawData = await pool.query('SELECT * FROM products');// ürünün genel görüntüsü
-        const data = rawData.rows;
-        
-
-      /*  const productNum = await getBasketItemCount(customer.id);
-           console.log("real:",productNum);
-*/
-        return res.status(200).json({data})
-
-
-    } catch (error) {
-        console.error(error);
-        
-        return res.status(500).json({message: "An error occured while fetching the products where quantity > 0"})
-        
-    }
+    return res.status(200).json({data});
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "An error occurred while fetching the products" });
+  }
+  });
 
 
-});
+
+
 shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
     try {
         const{product_id}=req.params;

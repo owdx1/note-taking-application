@@ -63,3 +63,19 @@ refreshtoken varchar(255),
 primary key (customer_id , refrestoken), --> burada yazım hatası vardı refrestoken --> refreshtoken
 foreign key (customer_id) references customers (customer_id)
 )
+
+******************************************************************************************************
+
+alter table order_items
+add column size varchar(20)
+
+alter table order_items
+add column size_i integer
+
+
+insert into products(product_name,category_id,price,color,description)
+values('Terlik',6,230,'siyah','iyi birr terlik')
+
+
+insert into feature(product_id,size_i,quantity)
+values(üsttekinin product_idsi,38,5)
