@@ -5,6 +5,7 @@ const adminRouter = require('./routes/admin');
 const profileRouter = require('./routes/profile');
 const shopRouter = require('./routes/shop');
 const cors = require('cors');
+
 const pool = require('./db');
 const accessTokenValidator = require('./middlewares/accessTokenValidator');
 const refreshTokenValidator = require('./middlewares/refreshTokenValidator');
@@ -18,6 +19,12 @@ app.use('/auth' , authRouter)
 app.use('/admin' , adminRouter);
 app.use('/profile', profileRouter)
 app.use('/shop' , shopRouter)
+app.post('/cart-control', accessTokenValidator , refreshTokenValidator , async (req, res) =>{
+    const {customer} = req;
+
+    
+})
+
 // app.use('/myNotes' , myNotesRouter)
 app.get('/product-num',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
