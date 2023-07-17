@@ -77,5 +77,5 @@ insert into products(product_name,category_id,price,color,description)
 values('Terlik',6,230,'siyah','iyi birr terlik')
 
 
-select * from feature(product_id,size_i,quantity)
+insert into feature(product_id,size_i,quantity)
 values(üsttekinin product_idsi,38,5)

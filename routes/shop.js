@@ -77,7 +77,7 @@ shopRouter.get('/basket',accessTokenValidator,refreshTokenValidator,async(req,re
 shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
 
-        const {customer}=req;
+        const {customer,accessToken}=req;
         const{id}=customer;
         const {product_id,quantity,size,totalAmount,color,category}=req.body;//hangi ürün ve ne kadar olunduğu arayüzden alınacak ----sanırım body !!!!!!
         //size de alınacak
@@ -131,7 +131,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
           const productNum = await getBasketItemCount(customer.id);
            console.log("real:",productNum);
           
-          return res.status(200).json({message: 'Added in basket  successfully' , productNum: productNum});
+          return res.status(200).json({message: 'Added in basket  successfully' , productNum: productNum,accessToken:accessToken});
 
         //const idQuery=await pool.query("SELECT * FROM order_items ");
         //res.json(idQuery.rows);
