@@ -50,7 +50,7 @@ shopRouter.get('/basket',accessTokenValidator,refreshTokenValidator,async(req,re
         const{id}=customer;
         const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [customer.id]);
         const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
-        const categoryID=await pool.query('')
+        
         const cart=await pool.query("SELECT P.product_name,p.color,o.price,F.size_i,F.size,F.quantity from order_items o,products p ,feature F WHERE order_id=$1 and o.product_id=p.product_id and p.product_id=F.product_id",[newOrderId]);
         
         const data=cart.rows;

@@ -19,14 +19,23 @@ app.use('/auth' , authRouter)
 app.use('/admin' , adminRouter);
 app.use('/profile', profileRouter)
 app.use('/shop' , shopRouter)
-app.post('/cart-control', accessTokenValidator , refreshTokenValidator , async (req, res) =>{
-    const {customer} = req;
 
-    
-})
+
+
+
+app.post('/cart-control', accessTokenValidator , refreshTokenValidator , async (req, res) =>{
+    const data = 3;
+    return res.status(200).json({data})
+});
+
+
+
+
+
+
 
 // app.use('/myNotes' , myNotesRouter)
-app.get('/product-num',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
+app.get('/product-num',accessTokenValidator,async(req,res)=>{
     try {
         const{customer}=req;
         const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [customer.id]);
