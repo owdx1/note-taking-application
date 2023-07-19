@@ -28,10 +28,10 @@ require('dotenv').config();
             }
 
             if (password1 !== password2 ) {
-                return res.json({message: 'Şifreler eşleşmiyor.'});
+                return res.status(400).json({message: 'Şifreler eşleşmiyor.'});
             }
             else if (password1.length < 6){
-                return res.json({message: 'Şifre uzunluğu 6 dan büyük olmalıdır.'});
+                return res.status(400).json({message: 'Şifre uzunluğu 6 dan büyük olmalıdır.'});
             }
             else if (!passwordRegex.test(password1)) {
                 return res.status(400).json({message: 'Şifre en az 6 karakter uzunluğunda , en az 1 harf ve rakam içermelidir.'});
