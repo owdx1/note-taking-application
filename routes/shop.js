@@ -88,12 +88,12 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
         
         
 
-          const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [customer.id]);
+          const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
          
 
          
-          const avilableProduct=await pool.query("SELECT * from order_items I, products P,feature F where P.product_id=$1 AND I.order_id=$2 AND I.product_id=P.product_id AND P.product_id=F.product_id  ",[product_id,newOrderId]);
+          const avilableProduct=await pool.query("Select * from order_items where order_id=$2 and product_id=$1",[product_id,newOrderId]);
           //!!!!!!!!!!!!!!!!!!!!
           if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekle
             if(category===6){const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size_i) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);}
@@ -123,7 +123,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
             newQuantity=oldQuantity+quantity;
             newPrice = totalAmount+oldPrice;
             if(category===6){const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size_i=$5",[newQuantity,newPrice,product_id,newOrderId,size]); }
-            else{const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size",[newQuantity,newPrice,product_id,newOrderId,size]);
+            else{const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size=$5",[newQuantity,newPrice,product_id,newOrderId,size]);
         }
         }
           const productNum = await getBasketItemCount(customer.id);
@@ -149,8 +149,8 @@ shopRouter.delete('/delete-product/:product_id',accessTokenValidator,refreshToke
         const newestOrder = await pool.query('SELECT * FROM orders ORDER BY order_date DESC WHERE customer_id=$1' , [customer.id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişi listeler(son siparis id)
 
-        const avilableProduct=await pool.query("SELECT * from order_items I, products P,feature F where product_id=$1 AND order_id=$2 AND I.product_id=P.product_id AND P.product_id=F.product_id  ",[product_id,newOrderId]);
-        if(avilableProduct.rows.length===0){        return res.status(404).send('Note not found');    }
+          const avilableProduct=await pool.query("Select * from order_items where order_id=$2 and product_id=$1",[product_id,newOrderId]);
+        if(avilableProduct.rows.length===0){return res.status(404).send('Note not found');    }
         else{
             await pool.query("DELETE FROM order_items WHERE order_id=$1 AND product_id=$2",[newOrderId,product_id]);
             return res.status(200).json({message: 'Product deleted successfully'});
