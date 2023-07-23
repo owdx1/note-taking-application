@@ -80,7 +80,7 @@ profileRouter.post('/cart/update-quantity',accessTokenValidator,refreshTokenVali
     }
 })
 
-profileRouter.delete('cart/empty-cart',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
+profileRouter.delete('/cart/empty-cart',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
         const {customer}=req;
         const customer_id=customer.id;
@@ -93,7 +93,7 @@ profileRouter.delete('cart/empty-cart',accessTokenValidator,refreshTokenValidato
         return res.status(500).send('Server Error');
     }
 });
-profileRouter.delete('cart/delete-a-product',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
+profileRouter.delete('/cart/delete-a-product',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     const{product_id}=req.body;
     const {customer}=req;
         const customer_id=customer.id;
