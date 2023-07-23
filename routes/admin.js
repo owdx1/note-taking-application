@@ -37,38 +37,30 @@ adminRouter.post('/add-a-product' ,adminTokenValidator , async (req , res) => {
         const { product_name,
             category_id,
             price,
+            discount,// default value=0
             pattern,
             color,
             description ,
-            size,quantity,
+            size,quantity
         } = req.body;
 
-        
-       /* const avilableProduct=await pool.query("SELECT * from products where product_id=$1 ",[product_id]);
-        const newQuery = (category_id == 2) ? 
-            await pool.query("INSERT INTO products (product_name, category_id, price, color, pattern, description) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
-                [product_name,category_id,price ,color  ,pattern ,description])
-                :
-            await pool.query("INSERT INTO products (product_name, category_id, price, color, pattern, description) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
-                [product_name,category_id,price ,color  ,pattern ,description]);
-            */  
                 const availableInProduct=await pool.query("SELECT * FROM products P,feature F WHERE P.product_id=F.product_id and P.category_id=$1 and P.color=$2 and F.size=$3 ",[category_id,color,size]);
             if(availableInProduct.rows.length===0){
                     
-           await pool.query("INSERT INTO products (product_name, category_id, price, color, description) VALUES($1,$2,$3,$4,$5) RETURNING *",
-           [product_name,category_id,price ,color   ,description]);
-           const product_id=await pool.query("SELECT product_id FROM products WHERE product_name=$1 AND category_id=$2 AND price=$3 AND color=$4 AND description=$5",[product_name,category_id,price ,color   ,description]);
-           const productId=product_id.rows[0].product_id;
+           const prId=await pool.query("INSERT INTO products (product_name, category_id, price,discount, color, description) VALUES($1,$2,$3,$4,$5,$6) RETURNING product_id",
+           [product_name,category_id,price ,discount,color   ,description]);
+           console.log("prid",prId.rows[0].product_id);
+           const productId=prId.rows[0].product_id;
            console.log(productId);
 
                if(category_id===6){
                    
-                   // ürün varsa diye kontrol etmeli burda
+                   
                    await pool.query("INSERT INTO feature(product_id,size_i,quantity) values($1,$2,$3)",[productId,size,quantity]);
                }
                else{
                   
-                   // ürün varsa diye kontrol etmeli
+                  
                    
                    await pool.query("INSERT INTO feature(product_id,size,quantity) values($1,$2,$3)",[productId,size,quantity]);
                }
