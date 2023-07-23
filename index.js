@@ -70,16 +70,6 @@ app.post('/reset-password' , accessTokenValidator , refreshTokenValidator , asyn
     return res.status(401).json({message: 'Yeni şifre eski şifre ile aynı olamaz!'});
 })
 
-
-
-
-
-
-
-
-
-
-
 // app.use('/myNotes' , myNotesRouter)
 app.get('/product-num',accessTokenValidator,async(req,res)=>{
     try {
@@ -97,6 +87,17 @@ app.get('/product-num',accessTokenValidator,async(req,res)=>{
         return res.status(500).send('Server error');
     }
 });
+
+app.get('/popo', (req , res) =>{
+    return res.send('aaa')
+    
+})
+
+
+
+
+
+
 app.listen(5000, ()=>{
     console.log("listenin on 5000");
 })

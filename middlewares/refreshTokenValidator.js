@@ -2,10 +2,11 @@ const pool = require('../db');
 const jwt = require('jsonwebtoken');
 
 const refreshTokenValidator = async (req, res, next) => {
+    
+    
     const customer = req.customer;
     const { id, email } = customer;
-    console.log("id: ", id);
-    console.log(email);
+    
     
     const resp1 = await pool.query('SELECT * FROM refresh_tokens WHERE customer_id = $1', [id]);
     if (resp1.rows.length === 0) {
@@ -19,6 +20,10 @@ const refreshTokenValidator = async (req, res, next) => {
     await pool.query('INSERT INTO refresh_tokens (customer_id , refreshtoken) values ($1 , $2)', [id, newRefreshToken]);
 
     req.accessToken = newAccessToken;
+
+    req.customer = customer;
+
+    console.log("suanki req.customer" , req.customer);
     
     next();
 }

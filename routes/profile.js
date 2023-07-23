@@ -75,6 +75,65 @@ profileRouter.get('/products-mine' , accessTokenValidator , refreshTokenValidato
 });
 
 
+profileRouter.post('/update-info' , accessTokenValidator, refreshTokenValidator, async (req , res) =>{
+    
+    const {customer} = req;
+    console.log('icerideki customer' , customer);
+    console.log('suanki body' , req.body);
+    const {id} = customer;
+    const {accessToken} = req;
+    console.log('yeni access token' , accessToken);
+    console.log('suanki id' , id);
+
+        try { 
+            
+            const {firstName, lastName,
+                    address, postalcode, country,
+                    city, phoneNumber} = req.body;
+            
+            
+            
+            const phoneNumberRegex = /^(05)[0-9][0-9][\s]([0-9]){3}[\s]([0-9]){2}[\s]([0-9]){2}/
+                    
+            if(country === ""){
+                return res.status(400).json({message: 'Lütfen geçerli bir ülke giriniz.'})
+            } 
+            else if(city === ""){
+                return res.status(400).json({message: 'Lütfen geçerli bir şehir giriniz.'})
+            }
+            else if(firstName === ""){
+                return res.status(400).json({message: 'Lütfen geçerli bir isim giriniz.'})
+            }
+            else if(lastName === ""){
+                return res.status(400).json({message: 'Lütfen geçerli bir soyisim giriniz.'})
+            }
+            else if(address === ""){
+                return res.status(400).json({message: 'Lütfen geçerli bir adres giriniz.'})
+            }
+            else if(!phoneNumberRegex.test(phoneNumber)){
+                return res.status(400).json({message: 'Lütfen geçerli bir telefon numarası giriniz'});
+            } 
+            else if(postalcode === ''){
+                return res.status(400).json({message : 'Lütfen geçerli bir posta kodu giriniz'});
+            }
+
+            await pool.query('UPDATE customers SET country = $1, city = $2, first_name = $3 , last_name = $4, address = $5, phone = $6, postal_code = $7 WHERE customer_id = $8' , [country,city,firstName,lastName,address,phoneNumber,postalcode, id])
+            return res.status(200).json({message: 'Bilgiler başarıyla güncellendi!' , accessToken: accessToken})
+            
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({message: 'Server error'})
+        }
+   
+
+
+
+
+
+
+})
+
+
 
 
 
