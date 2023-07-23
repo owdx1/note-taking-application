@@ -1,2 +1,4 @@
 -db yeniden kurulacağı zaman id'ler serial değil de uuid yapılmalı
 -admin için admin logout eklenmeli, adminTokenValidator çalışıyor ama token expire olunca ne olacağına dair api lazım
+- sepetteki Buy'ın içi doldurulcak
+-admin kontrol paneli
