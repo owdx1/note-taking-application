@@ -34,6 +34,7 @@ CREATE TABLE orders (
     customer_id INTEGER,
     order_date TIMESTAMP DEFAULT NOW(),
     total_amount DECIMAL(10, 2),
+    isOrdered boolean ,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 

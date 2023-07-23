@@ -16,10 +16,10 @@ const app = express();
 app.use(cors())
 app.use(express.json())
 
-app.use('/auth' , authRouter)
+app.use('/auth' , authRouter);
 app.use('/admin' , adminRouter);
-app.use('/profile', profileRouter)
-app.use('/shop' , shopRouter)
+app.use('/profile', profileRouter);
+app.use('/shop' , shopRouter);
 
 
 
