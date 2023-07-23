@@ -31,43 +31,50 @@ app.post('/cart-control', accessTokenValidator , refreshTokenValidator , async (
 
 app.post('/reset-password' , accessTokenValidator , refreshTokenValidator , async(req ,res) => {
     const {customer} = req;
+    console.log('suanki customer', customer);
     const {accessToken} = req;
-    const customer_id = customer.id;
-    const {password1 , password2} = req.body;
+    console.log('yeni access token' , accessToken);
+    const {id} = customer;
+    console.log('kullanıcının idsi' , id);
+    const {oldPassword , newPassword , newPasswordRepeat} = req.body;
 
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
 
+    console.log('gelen istekteki bilgiler:' , oldPassword , newPassword , newPasswordRepeat);
+    console.log('sifre uzunluk' , newPassword.length);
 
-    if (password1 !== password2 ) {
+    if (newPassword !== newPasswordRepeat ) {
         return res.status(400).json({message: 'Şifreler eşleşmiyor.'});
     }
-    else if (password1.length < 6){
+    else if (newPassword.length < 6){
         return res.status(400).json({message: 'Şifre uzunluğu 6 dan büyük olmalıdır.'});
     }
-    else if (!passwordRegex.test(password1)) {
+    else if (!passwordRegex.test(newPassword)) {
         return res.status(400).json({message: 'Şifre en az 6 karakter uzunluğunda , en az 1 harf ve rakam içermelidir.'});
     }
 
 
-    const response = await pool.query('SELECT password from customers where customer_id = $1' , [customer_id]);
+    const response = await pool.query('SELECT password from customers where customer_id = $1' , [id]);
+    console.log('suanki response rows' , response.rows);
     if(response.rows.length === 0){
         return res.status(500).json({message: 'Server Error'});
     }
+    
     const hashedPassword = response.rows[0].password;
+    
 
-    const isValid = await bcrypt.compare(hashedPassword, password1);
+    const isValid = await bcrypt.compare(oldPassword,hashedPassword);
     console.log("isValid objesi" , isValid);
 
     if(!isValid){
 
-        const genRound = 10;
-        const genSalt = await bcrypt.genSalt(genRound)
-        const recryptedPassword = await bcrypt.hash(password1 , genSalt);
-        await pool.query('UPDATE customers SET password = $1 WHERE customer_id = $2' , [recryptedPassword , customer_id]);
-        return res.status(200).json({message: 'Şifre başarıyla değiştirildi!', accessToken: accessToken});
+        return res.status(409).json({message: 'Girilen eski şifre yanlış!'});
     } 
-
-    return res.status(401).json({message: 'Yeni şifre eski şifre ile aynı olamaz!'});
+    const genRound = 10;
+    const genSalt = await bcrypt.genSalt(genRound)
+    const recryptedPassword = await bcrypt.hash(newPassword , genSalt);
+    await pool.query('UPDATE customers SET password = $1 WHERE customer_id = $2' , [recryptedPassword , id]);
+    return res.status(200).json({message: 'Şifre başarıyla değiştirildi!', accessToken: accessToken});
 })
 
 // app.use('/myNotes' , myNotesRouter)
@@ -88,10 +95,6 @@ app.get('/product-num',accessTokenValidator,async(req,res)=>{
     }
 });
 
-app.get('/popo', (req , res) =>{
-    return res.send('aaa')
-    
-})
 
 
 

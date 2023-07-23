@@ -62,7 +62,7 @@ profileRouter.get('/products-mine' , accessTokenValidator , refreshTokenValidato
         const {customer} = req;
         const {accessToken} = req;
 
-        const newestOrder = await pool.query('SELECT * FROM orders  DESC WHERE customer_id=$1 ORDER BY order_date' , [customer.customer_id]);//en son siparişi listeler
+        const newestOrder = await pool.query('SELECT * FROM orders ORDER BY order_date DESC WHERE customer_id=$1' , [customer.customer_id]);//en son siparişi listeler
         const newOrderId = newestOrder.rows[0].order_id;
         const productsInCart=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[newOrderId]);
          return res.status(200).json(productsInCart.rows);
@@ -73,17 +73,7 @@ profileRouter.get('/products-mine' , accessTokenValidator , refreshTokenValidato
     }
 
 });
-profileRouter.get('/orders',accessTokenValidator,refreshTokenValidator,async(req,res)=>{//önceki siparişleri gösterir
-    try {
-        const {customer} = req;
-        const ordered=await pool.query('SELECT * FROM orders WHERE isOrdered = true ORDER BY order_date DESC');
-        console.log(ordered);
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server Error');
-    }
-})
 
 profileRouter.post('/update-info' , accessTokenValidator, refreshTokenValidator, async (req , res) =>{
     
@@ -134,14 +124,7 @@ profileRouter.post('/update-info' , accessTokenValidator, refreshTokenValidator,
             console.error(error);
             return res.status(500).json({message: 'Server error'})
         }
-   
-
-
-
-
-
-
-})
+});
 
 
 
