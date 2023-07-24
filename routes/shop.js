@@ -25,7 +25,7 @@ async function getBasketItemCount(customerId) {
   
     try {
 
-      const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [customerId]);
+      const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customerId]);
     const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
 
     const productNumResult = await pool.query("SELECT SUM(quantity) FROM order_items WHERE order_id = $1", [newOrderId]);
@@ -48,7 +48,7 @@ shopRouter.get('/basket',accessTokenValidator,refreshTokenValidator,async(req,re
     try {
         const {customer,accessToken}=req;
         const{id}=customer;
-        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [customer.id]);
+        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
         const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
         
         //const cart=await pool.query("SELECT DISTINCT P.product_name,p.color,o.price,F.size_i,F.size,F.quantity from order_items o,products p ,feature F WHERE order_id=$1 and o.product_id=p.product_id and p.product_id=F.product_id",[newOrderId]);
@@ -88,7 +88,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
         
         
 
-          const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [id]);
+          const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
          
 
@@ -146,7 +146,7 @@ shopRouter.delete('/delete-product/:product_id',accessTokenValidator,refreshToke
     try {
         const{customer}=req;
         const{product_id}=req.params;
-        const newestOrder = await pool.query('SELECT * FROM orders ORDER BY order_date DESC WHERE customer_id=$1' , [customer.id]);
+        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişi listeler(son siparis id)
 
           const avilableProduct=await pool.query("Select * from order_items where order_id=$2 and product_id=$1",[product_id,newOrderId]);
@@ -167,7 +167,7 @@ shopRouter.put('/update-quantity/:product_id',accessTokenValidator,refreshTokenV
         const{customer}=req;
         const{product_id}=req.params;
         const {quantity}=req.body;
-        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [customer.id]);
+        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişi listeler
 
           const avilableProduct=await pool.query("SELECT * from order_items I, products P,feature F where product_id=$1 AND order_id=$2 AND I.product_id=P.product_id AND P.product_id=F.product_id  ",[product_id,newOrderId]);
