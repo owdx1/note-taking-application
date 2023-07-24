@@ -47,8 +47,8 @@ CREATE TABLE order_items (
     quantity INTEGER,
     pattern varchar(100),
     price DECIMAL(10, 2),
-	size varchar(20),
-	size_i integer,
+	size varchar(20) DEFAULT '',
+	size_i integer DEFAULT 0,
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );

@@ -59,7 +59,8 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const {accessToken} = req;
 
         const orderId= await getNewOrderId(customer_id);
-        const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
+        //const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
+        const basket=await pool.query("select * from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size_i=f.size_i and o.size=f.size",[orderId]);
         
         
         return res.status(200).json({customer , basket:basket.rows , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
@@ -106,12 +107,12 @@ profileRouter.delete('/cart/empty-cart',accessTokenValidator,refreshTokenValidat
 
 
 profileRouter.delete('/cart/delete-a-product',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
-    const{product_id}=req.body;
+    const{product_id,feature_id}=req.body;
     const {customer}=req;
         const customer_id=customer.id;
         const orderId=getNewOrderId(customer_id);
 
-    await pool.query("DELETE FROM order_items WHERE product_id=$1 and order_id=$2",[product_id,orderId]);
+    await pool.query("DELETE FROM order_items WHERE   order_id=$2 and order_item_id in (select o.order_item_id from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id  and o.size_i=f.size_i and o.size=f.size and f.feature_id=$3  and p.product_id =$1 )",[product_id,orderId,feature_id]);
     return res.status(200).json({message:"Ürün Başarıyla Silindi!!!"});
 });
 
@@ -125,23 +126,23 @@ profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(
     const orderId= await getNewOrderId(customer_id);
 
     await pool.query('UPDATE orders SET isOrdered=true WHERE order_id=$1',[orderId]);
+    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)',[customer_id,0]);
     return res.status(200).json({message:"Satın alındı!!!",accessToken:accessToken});
 });
 
 
-profileRouter.get('/orders'  ,accessTokenValidator, async (req , res) => {
+profileRouter.get('/orders'  ,accessTokenValidator,refreshTokenValidator, async (req , res) => {
     try {
     
         const {customer} = req;
         const {accessToken} = req;
-        const{orderInfo}=req.body;
-        orderInfo=0;
+        
         const newestOrder = await pool.query('SELECT * FROM orders   WHERE customer_id=$1 and isOrdered=true ' , [customer.id]);
         //const orderIds = newestOrder.rows.map((order) => order.order_id);
          const oldOrders=newestOrder.rows;
         
         
-        return res.status(200).json(oldOrders);
+        return res.status(200).json({oldOrders,accessToken:accessToken});
     
     }   catch (error) {
         console.error(error);
@@ -153,9 +154,10 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
     try {
         const {customer} = req;
         const{order_id}=req.params;
+        const {accessToken} = req;
         const ordered=await pool.query('SELECT * FROM order_items WHERE isOrdered = true and order_id=$1',[order_id]);
         console.log(ordered);
-        return res.status(200).json(ordered);
+        return res.status(200).json({ordered:ordered.rows});
     } catch (error) {
         console.error(error);
         return res.status(500).send('Server Error');
