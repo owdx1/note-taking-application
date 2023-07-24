@@ -62,7 +62,7 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
         
         
-        return res.status(200).json({customer , basket , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
+        return res.status(200).json({customer , basket:basket.rows , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
 
         
     } catch (error) {
@@ -120,28 +120,29 @@ profileRouter.delete('/cart/delete-a-product',accessTokenValidator,refreshTokenV
 
 profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     const {customer}=req;
+    const {accessToken} = req;
     const customer_id=customer.id;
-    const orderId=getNewOrderId(customer_id);
+    const orderId=await getNewOrderId(customer_id);
 
     await pool.query('UPDATE orders SET isOrdered=true WHERE order_id=$1',[orderId]);
-    return res.status(200).json({message:"Satın alındı!!!"});
+    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)',[customer_id,0]);
+    return res.status(200).json({message:"Satın alındı!!!" , accessToken : accessToken});
 });
 
 
-profileRouter.get('/orders'  ,accessTokenValidator, async (req , res) => {
+profileRouter.get('/orders',accessTokenValidator, refreshTokenValidator, async (req , res) => {
     try {
-    
+
         const {customer} = req;
         const {accessToken} = req;
-        const{orderInfo}=req.body;
-        orderInfo=0;
+
         const newestOrder = await pool.query('SELECT * FROM orders   WHERE customer_id=$1 and isOrdered=true ' , [customer.id]);
         //const orderIds = newestOrder.rows.map((order) => order.order_id);
          const oldOrders=newestOrder.rows;
-        
-        
-        return res.status(200).json(oldOrders);
-    
+
+
+        return res.status(200).json({oldOrders,accessToken:accessToken});
+
     }   catch (error) {
         console.error(error);
         return res.status(500).send('Server Error');
