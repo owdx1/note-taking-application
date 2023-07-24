@@ -58,7 +58,7 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const {product_id,quantity}=req.body;// buy tusuna basıldığında bana bir data dönmeli 
         const {accessToken} = req;
 
-        const orderId=getNewOrderId(customer_id);
+        const orderId= await getNewOrderId(customer_id);
         const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
         
         
@@ -92,7 +92,7 @@ profileRouter.delete('/cart/empty-cart',accessTokenValidator,refreshTokenValidat
         const {customer}=req;
         const customer_id=customer.id;
         const {accessToken} = req;
-        const orderId=getNewOrderId(customer_id);
+        const orderId= await getNewOrderId(customer_id);
 
         await pool.query('DELETE FROM order_items WHERE order_id=$1',[orderId]);
         return res.status(200).json({message:"Sipariş Listeniz Başarıyla Silindi!!", accessToken:accessToken});
