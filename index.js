@@ -86,6 +86,12 @@ app.get('/product-num',accessTokenValidator,async(req,res) => {
     
         const productNumResult = await pool.query("SELECT SUM(quantity) FROM order_items WHERE order_id = $1", [newOrderId]);
         let productNum=productNumResult.rows[0].sum;
+        
+        
+        if(productNum === null){
+            productNum=0;
+        }
+        
         return res.status(200).json({productNum});
 
         
