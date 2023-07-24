@@ -56,11 +56,11 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const {product_id,quantity}=req.body;// buy tusuna basıldığında bana bir data dönmeli 
         const {accessToken} = req;
 
-        const orderId=getNewOrderId(customer_id);
-        const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
+        const orderId = await getNewOrderId(customer_id);
+        const basket = await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
         
         
-        return res.status(200).json({customer , basket , accessToken:accessToken,message:"güncel sepettesiniz!!!"}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
+        return res.status(200).json({customer , basket:basket.rows , accessToken:accessToken,message:"güncel sepettesiniz!!!"}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
 
         
     } catch (error) {

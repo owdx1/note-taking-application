@@ -5,7 +5,7 @@ const pool = new Pool({
   password: "o547988633",
   host: "localhost",
   port:"5432",
-  database: "vobe_ecom16thjuly"  
+  database: "vobe_24thjuly"  
 });
 
 
