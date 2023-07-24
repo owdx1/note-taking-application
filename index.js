@@ -78,7 +78,7 @@ app.post('/reset-password' , accessTokenValidator , refreshTokenValidator , asyn
 })
 
 // app.use('/myNotes' , myNotesRouter)
-app.get('/product-num',accessTokenValidator,async(req,res)=>{
+app.get('/product-num',accessTokenValidator,async(req,res) => {
     try {
         const{customer}=req;
         const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 ORDER BY order_date DESC' , [customer.id]);
@@ -86,9 +86,13 @@ app.get('/product-num',accessTokenValidator,async(req,res)=>{
     
         const productNumResult = await pool.query("SELECT SUM(quantity) FROM order_items WHERE order_id = $1", [newOrderId]);
         let productNum=productNumResult.rows[0].sum;
-        if(productNumResult.rows.length===0){
+
+        
+        if(productNum === null){
             productNum=0;
         }
+        
+
         return res.status(200).json({productNum});
 
         
@@ -97,7 +101,7 @@ app.get('/product-num',accessTokenValidator,async(req,res)=>{
         return res.status(500).send('Server error');
     }
 });
-
+     
 
 
 
@@ -108,3 +112,4 @@ app.listen(5000, ()=>{
     console.log("listenin on 5000");
 })
 
+ 

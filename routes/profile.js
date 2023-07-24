@@ -61,8 +61,9 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const orderId= await getNewOrderId(customer_id);
         //const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
         const basket=await pool.query("select *,f.quantity as totalquantity,o.quantity as orderquantity  from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size_i=f.size_i and o.size=f.size",[orderId]);
+
         //!!!!! * 'ı elemen gerek sonradan
-        
+
         return res.status(200).json({customer , basket:basket.rows , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
 
         
@@ -106,15 +107,18 @@ profileRouter.delete('/cart/empty-cart',accessTokenValidator,refreshTokenValidat
 
 
 
-profileRouter.delete('/cart/delete-a-product',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
+profileRouter.post('/cart/delete-a-product',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     const{product_id,feature_id}=req.body;
     const {customer}=req;
-    const{accessToken}=req;
+
+    const {accessToken} = req;
         const customer_id=customer.id;
-        const orderId=getNewOrderId(customer_id);
+        const orderId= await getNewOrderId(customer_id);
 
     await pool.query("DELETE FROM order_items WHERE   order_id=$2 and order_item_id in (select o.order_item_id from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id  and o.size_i=f.size_i and o.size=f.size and f.feature_id=$3  and p.product_id =$1 )",[product_id,orderId,feature_id]);
-    return res.status(200).json({message:"Ürün Başarıyla Silindi!!!",accessToken:accessToken});
+
+    return res.status(200).json({message:"Ürün Başarıyla Silindi!!!" , accessToken: accessToken});
+
 });
 
 
@@ -122,8 +126,8 @@ profileRouter.delete('/cart/delete-a-product',accessTokenValidator,refreshTokenV
 
 profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     const {customer}=req;
+    const {accessToken} = req;
     const customer_id=customer.id;
-    const{accessToken}=req;
     const orderId= await getNewOrderId(customer_id);
 
     await pool.query('UPDATE orders SET isOrdered=true WHERE order_id=$1',[orderId]);
@@ -132,9 +136,9 @@ profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(
 });
 
 
-profileRouter.get('/orders'  ,accessTokenValidator,refreshTokenValidator, async (req , res) => {
+profileRouter.get('/orders'  ,accessTokenValidator, refreshTokenValidator, async (req , res) => {
     try {
-    
+
         const {customer} = req;
         const {accessToken} = req;
         
@@ -143,7 +147,7 @@ profileRouter.get('/orders'  ,accessTokenValidator,refreshTokenValidator, async 
          const oldOrders=newestOrder.rows;
         
         
-        return res.status(200).json({oldOrders,accessToken:accessToken});
+        return res.status(200).json({oldOrders , accessToken});
     
     }   catch (error) {
         console.error(error);
