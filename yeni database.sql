@@ -56,8 +56,8 @@ CREATE TABLE order_items (
 CREATE TABLE feature (
     feature_id SERIAL PRIMARY KEY,
     product_id INTEGER,
-    size VARCHAR(20),
-    size_i INTEGER,
+    size VARCHAR(20) DEFAULT '',
+    size_i INTEGER DEFAULT 0,
     quantity INTEGER,
     FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
 );
