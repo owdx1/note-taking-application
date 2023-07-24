@@ -62,7 +62,7 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
         
         
-        return res.status(200).json({customer , basket , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
+        return res.status(200).json({customer , basket:basket.rows , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
 
         
     } catch (error) {
@@ -121,10 +121,11 @@ profileRouter.delete('/cart/delete-a-product',accessTokenValidator,refreshTokenV
 profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     const {customer}=req;
     const customer_id=customer.id;
-    const orderId=getNewOrderId(customer_id);
+    const{accessToken}=req;
+    const orderId= await getNewOrderId(customer_id);
 
     await pool.query('UPDATE orders SET isOrdered=true WHERE order_id=$1',[orderId]);
-    return res.status(200).json({message:"Satın alındı!!!"});
+    return res.status(200).json({message:"Satın alındı!!!",accessToken:accessToken});
 });
 
 
