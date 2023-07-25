@@ -177,7 +177,51 @@ adminRouter.put('/product-feature/:product_id/:feature_id',adminTokenValidator,a
         console.error(error);
         return res.status(500).send('Server error');
     }
-})
+});
+
+adminRouter.get('/getOrders',adminTokenValidator,async(req,res)=>{
+
+    try {
+        const {adminToken}=req;
+        
+        await pool.query('SELECT * from orders where  isOrdered=true');//!! and isAccepted=false;
+        return res.status(200).json({adminToken:adminToken});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    }
+});
+adminRouter.post('/acceptOrders',adminTokenValidator,async(req,res)=>{
+
+    try {
+        const {adminToken}=req;
+        const{acceptButton,order_id}=req.body;
+        if(acceptButton===true){
+            await pool.query('UPDATE orders SET isAccepted=true Where order_id=$1',[order_id]);
+        }
+        return res.status(200).json({adminToken:adminToken,message:"Sipariş onaylandı"});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    }
+});
+
+
+adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
+
+    try {
+        const{order_id}=req.params;
+        const {adminToken}=req;
+        const orderFeature=await pool.query('select * from orders o,order_items I where o.order_id=I.order_id and isOrdered=true and o.order_id=$1;',[order_id]);
+        return res.status(200).json({orderFeature:orderFeature.rows,adminToken:adminToken});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    }
+});
 
 
 
