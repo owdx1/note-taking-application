@@ -73,14 +73,19 @@ shopRouter.get('/basket',accessTokenValidator,refreshTokenValidator,async(req,re
         console.error(error);
         return res.status(500).json({message:'Cannot server error'});
     }
-})
+});
+
+
+
+
 shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
-      console.log(req);
+      const {product_id,quantity,size,totalAmount,color,category,currentFeatureId}=req.body;
         const {customer,accessToken}=req;
         const{id}=customer;
-        const {product_id,quantity,size,totalAmount,color,category}=req.body;//hangi ürün ve ne kadar olunduğu arayüzden alınacak ----sanırım body !!!!!!
+        //hangi ürün ve ne kadar olunduğu arayüzden alınacak ----sanırım body !!!!!!
         //size de alınacak
+        console.log(product_id,quantity,totalAmount,size,category,currentFeatureId);
         const query=await pool.query("SELECT * FROM orders where customer_id=$1 ",[id]);
         if(query.rows.length===0){
           const newQuery=await pool.query("INSERT INTO orders(customer_id,total_amount) VALUES($1,$2)",[id,0]);
@@ -92,11 +97,19 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
          
 
+        let checkQuantity =await pool.query('SELECT quantity FROM feature where feature_id=$1',[currentFeatureId]);
+        checkQuantity=checkQuantity.rows[0].quantity;
+        if(checkQuantity>=quantity){
+
+        
          
-          const avilableProduct=await pool.query("Select * from order_items where order_id=$2 and product_id=$1",[product_id,newOrderId]);
+          const avilableProduct=await pool.query("select *  from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size_i=f.size_i and o.size=f.size and f.feature_id=$2",[newOrderId,currentFeatureId]);
           //!!!!!!!!!!!!!!!!!!!!
           if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekle
-            if(category===6){const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size_i) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);}
+            if(category===6){
+              const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size_i) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);
+              
+            }
             else{const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);
         }
         }
@@ -107,7 +120,8 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
         if (category === 6) {
          const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size_i=$3", [newOrderId, product_id, size]);
         const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2 and size_i=$3", [newOrderId, product_id,size]);
-            oldPrice=parseFloat(oldPriceResult.rows[0].price);
+           console.log(oldPriceResult.rows);
+        oldPrice=parseFloat(oldPriceResult.rows[0].price);
           oldQuantity = parseInt(oldQuantityResult.rows[0].quantity);
         }   else {
           const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size=$3", [newOrderId, product_id, size]);
@@ -130,10 +144,13 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
            console.log("real:",productNum);
           
           return res.status(200).json({message: 'Added in basket  successfully' , productNum: productNum,accessToken:accessToken});
+      }
 
         //const idQuery=await pool.query("SELECT * FROM order_items ");
         //res.json(idQuery.rows);
-
+      else{
+        return res.status(404).json({message:'Insufficient stock quantity  '});
+      }
 
         
     } catch (error) {

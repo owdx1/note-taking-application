@@ -12,6 +12,7 @@ const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
 
 
+
 const profileRouter = require('express').Router();
 
 async function getNewOrderId(customer_id){
@@ -30,12 +31,13 @@ profileRouter.get('/' , accessTokenValidator, refreshTokenValidator , async (req
     try {
         
         const {customer} = req;
-        const { id} = customer;
+        const {id} = customer;
         const {accessToken} = req; // bunu neden aldım hatırlamıyorum
         console.log(customer); // bu silinecek
 
         const response = await pool.query('SELECT * FROM customers WHERE customer_id = $1' , [id]);
-        const sendResponse = response.rows[0];
+        const sendResponse = response.rows[0]; // burada yollanılan customerin içinde hashlı şifre de var, 
+        // eğer olur da request intercept edilirse hashli şifreyi hackera vermis oluyoruz
         return res.status(200).json({customer:sendResponse , accessToken:accessToken});
         
         
@@ -144,8 +146,8 @@ profileRouter.get('/orders'  ,accessTokenValidator, refreshTokenValidator, async
         
         const newestOrder = await pool.query('SELECT * FROM orders   WHERE customer_id=$1 and isOrdered=true ' , [customer.id]);
         //const orderIds = newestOrder.rows.map((order) => order.order_id);
-         const oldOrders=newestOrder.rows;
-        
+        const oldOrders=newestOrder.rows;
+        console.log('yolladıgım siparisler' , oldOrders);
         
         return res.status(200).json({oldOrders , accessToken});
     
@@ -155,14 +157,14 @@ profileRouter.get('/orders'  ,accessTokenValidator, refreshTokenValidator, async
     }
 
 });
-profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator,async(req,res)=>{//önceki siparişleri gösterir
+profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator,async(req,res)=>{//spesifik siparişin içeriğini gösterir
     try {
         const {customer} = req;
         const{order_id}=req.params;
         const {accessToken} = req;
-        const ordered=await pool.query('SELECT * FROM order_items WHERE isOrdered = true and order_id=$1',[order_id]);
+        const ordered=await pool.query('SELECT * FROM orders o,order_items I WHERE o.customer_id=$2 AND isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id  ',[order_id,customer.id]);
         console.log(ordered);
-        return res.status(200).json({ordered:ordered.rows});
+        return res.status(200).json({ordered:ordered.rows,accessToken:accessToken});
     } catch (error) {
         console.error(error);
         return res.status(500).send('Server Error');
