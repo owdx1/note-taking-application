@@ -196,17 +196,37 @@ adminRouter.post('/acceptOrders',adminTokenValidator,async(req,res)=>{
 
     try {
         const {adminToken}=req;
-        const{acceptButton,order_id}=req.body;
+        const{acceptButton,order_id,feature_id,quantity}=req.body;
         if(acceptButton===true){
             await pool.query('UPDATE orders SET isAccepted=true Where order_id=$1',[order_id]);
-        }
-        return res.status(200).json({adminToken:adminToken,message:"Sipariş onaylandı"});
+            //!await pool.query('UPDATE orders SET isAccepted=false WHERE order_id=$1',[order_id]);
 
-    } catch (error) {
+            for (const stock of availableStock) {
+                const feature_id = stock.feature_id;
+                const quantity = stock.quantity;
+                
+                const result = await pool.query('SELECT quantity from feature where feature_id = $1', [feature_id]);
+                const availableStock = result.rows[0].quantity;
+              
+              
+                const setquantity = availableStock - quantity;
+              
+                
+                await pool.query('UPDATE feature SET quantity = $1 WHERE feature_id = $2', [setquantity, feature_id]);
+            }}
+        return res.status(200).json({adminToken:adminToken,message:"Sipariş onaylandı, stok güncellendi"});
+
+    }
+     catch (error) {
         console.error(error);
         return res.status(500).send('Server error');
     }
 });
+
+
+
+
+
 
 
 adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
