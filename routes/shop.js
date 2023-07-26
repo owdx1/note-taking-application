@@ -76,7 +76,7 @@ shopRouter.get('/basket',accessTokenValidator,refreshTokenValidator,async(req,re
 })
 shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
-
+      console.log(req);
         const {customer,accessToken}=req;
         const{id}=customer;
         const {product_id,quantity,size,totalAmount,color,category}=req.body;//hangi ürün ve ne kadar olunduğu arayüzden alınacak ----sanırım body !!!!!!
