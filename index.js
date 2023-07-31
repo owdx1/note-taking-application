@@ -9,7 +9,7 @@ const pool = require('./db');
 const accessTokenValidator = require('./middlewares/accessTokenValidator');
 const refreshTokenValidator = require('./middlewares/refreshTokenValidator');
 const bcrypt = require('bcrypt');
-
+const photoRouter=require('./routes/foto')
 
 const app = express();
 
@@ -20,7 +20,7 @@ app.use('/auth' , authRouter);
 app.use('/admin' , adminRouter);
 app.use('/profile', profileRouter);
 app.use('/shop' , shopRouter);
-
+app.use('/foto',photoRouter);
 
 
 
