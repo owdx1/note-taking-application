@@ -8,7 +8,7 @@ Kullanıcı:
 const shopRouter = require('express').Router();
 
 const pool = require('../db');
-
+const minioClient=require('../minio');
 const accessTokenValidator = require('../middlewares/accessTokenValidator');
 const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
@@ -16,6 +16,7 @@ const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
 const axios = require('axios');
 
+const bucketName = 'ecommerce';
 
 
 
@@ -212,10 +213,28 @@ shopRouter.get('/', async (req, res) => {
     try {
       const rawData = await pool.query('SELECT * FROM products');
       const data = rawData.rows;
-  
-      
+      const productUrlsArray = data.map(item => item.producturl);
 
-    return res.status(200).json({data});
+
+      const preSignedUrls = [];
+
+      for (const productUrl of productUrlsArray) {
+        const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
+        preSignedUrls.push(photoUrl);
+      }
+  
+      // Combine the original data with the pre-signed URLs
+      const productsWithUrls = data.map((item, index) => ({
+        ...item,
+        photoUrl: preSignedUrls[index],
+      }));
+
+
+
+
+      console.log(productsWithUrls);
+
+    return res.status(200).json({data:productsWithUrls});
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "An error occurred while fetching the products" });
@@ -257,5 +276,77 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
         return res.status(500).send('Server Error');
     }
 })
+/*
 
+
+shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
+    try {
+        const{product_id}=req.params;
+        const rawData = await pool.query('SELECT * FROM products P,feature F WHERE P.product_id=$1 AND F.product_id=P.product_id',[product_id]);
+        let data=rawData.rows;
+        
+        const productQuantity=data.quantity;
+        if(rawData.rows[0].category_id===6){//available sizelari döndürüyor
+            const sizeIsNotNull = data
+            .filter(item => item.size_i !== null)
+                .map(item => item.size_i);
+
+                const productUrlsArray = data.map(item => item.featureurl);
+
+
+          const preSignedUrls = [];
+
+          for (const productUrl of productUrlsArray) {
+            const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
+            preSignedUrls.push(photoUrl);
+          }
+  
+         // Combine the original data with the pre-signed URLs
+         let transformedData = data.map((item, index) => ({
+            ...item,
+            photoUrl: preSignedUrls[index],
+           }));
+            
+
+              transformedData = transformedData.map(({ size_i, quantity,feature_id,photoUrl}) => ({ size_i, quantity ,feature_id,photoUrl}));
+
+            console.log(transformedData);
+            return res.status(200).json({transformedData,productsWithUrls})
+        }else{
+            const sizeIsNotNull = data
+            .filter(item => item.size !== null)
+                .map(item => item.size);
+
+                const productUrlsArray = data.map(item => item.featureurl);
+
+
+                const preSignedUrls = [];
+      
+                for (const productUrl of productUrlsArray) {
+                  const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
+                  preSignedUrls.push(photoUrl);
+                }
+        
+               // Combine the original data with the pre-signed URLs
+               let transformedData = data.map((item, index) => ({
+                  ...item,
+                  photoUrl: preSignedUrls[index],
+                 }));
+                  
+
+
+                  
+
+                 transformedData = transformedData.map(({ size, quantity,feature_id ,photoUrl}) => ({ size, quantity ,feature_id,photoUrl}));
+                 console.log(transformedData);
+            return res.status(200).json({transformedData,productsWithUrls})
+        }
+
+        
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+})*/ 
 module.exports = shopRouter;

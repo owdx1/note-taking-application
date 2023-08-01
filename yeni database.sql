@@ -11,6 +11,7 @@ CREATE TABLE products (
 	color varchar(50),
     discount DECIMAL(10, 2) DEFAULT 0.00,
     description TEXT,
+    productUrl TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
@@ -59,6 +60,7 @@ CREATE TABLE feature (
     size VARCHAR(20) DEFAULT '',
     size_i INTEGER DEFAULT 0,
     quantity INTEGER,
+    featureUrl TEXT,
     FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
 );
 
