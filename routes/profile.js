@@ -31,12 +31,13 @@ profileRouter.get('/' , accessTokenValidator, refreshTokenValidator , async (req
     try {
         
         const {customer} = req;
-        const { id} = customer;
+        const {id} = customer;
         const {accessToken} = req; // bunu neden aldım hatırlamıyorum
         console.log(customer); // bu silinecek
 
         const response = await pool.query('SELECT * FROM customers WHERE customer_id = $1' , [id]);
-        const sendResponse = response.rows[0];
+        const sendResponse = response.rows[0]; // burada yollanılan customerin içinde hashlı şifre de var, 
+        // eğer olur da request intercept edilirse hashli şifreyi hackera vermis oluyoruz
         return res.status(200).json({customer:sendResponse , accessToken:accessToken});
         
         
@@ -131,8 +132,14 @@ profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(
     const customer_id=customer.id;
     const orderId= await getNewOrderId(customer_id);
 
+    // burası eklendi
+    const {totalPrice} = req.body;
+    // burası eklendi
+
+
+
     await pool.query('UPDATE orders SET isOrdered=true WHERE order_id=$1',[orderId]);
-    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)',[customer_id,0]);
+    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)',[customer_id, totalPrice]); // çalışıyor mu test edilmesi gerekli
     return res.status(200).json({message:"Satın alındı!!!",accessToken:accessToken});
 });
 
@@ -143,10 +150,10 @@ profileRouter.get('/orders'  ,accessTokenValidator, refreshTokenValidator, async
         const {customer} = req;
         const {accessToken} = req;
         
-        const newestOrder = await pool.query('SELECT * FROM orders   WHERE customer_id=$1 and isOrdered=true ' , [customer.id]);
+        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=true ' , [customer.id]);
         //const orderIds = newestOrder.rows.map((order) => order.order_id);
-         const oldOrders=newestOrder.rows;
-        
+        const oldOrders=newestOrder.rows;
+        console.log('yolladıgım siparisler' , oldOrders);
         
         return res.status(200).json({oldOrders , accessToken});
     
