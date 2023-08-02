@@ -250,23 +250,56 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
         const rawData = await pool.query('SELECT * FROM products P,feature F WHERE P.product_id=$1 AND F.product_id=P.product_id',[product_id]);
         let data=rawData.rows;
         const productQuantity=data.quantity;
+
+
         if(rawData.rows[0].category_id===6){//available sizelari döndürüyor
             const sizeIsNotNull = data
             .filter(item => item.size_i !== null)
                 .map(item => item.size_i);
-            
 
-                const transformedData = data.map(({ size_i, quantity,feature_id }) => ({ size_i, quantity ,feature_id}));
+                const productUrlsArray = data.map(item => item.producturl);
 
-            console.log(transformedData);
-            return res.status(200).json({transformedData,sizeIsNotNull})
+                console.log('before',productUrlsArray);
+                const preSignedUrls = [];
+
+               for (const productUrl of productUrlsArray) {
+                const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
+               preSignedUrls.push(photoUrl);
+                  }
+
+                  const transformedData = data.map(({ size, quantity,feature_id }) => ({ size, quantity ,feature_id}));
+
+                  const productsWithUrls = transformedData.map((item, index) => ({
+                    ...item,
+                    photoUrl: preSignedUrls[index],
+                  }));  
+              console.log(productsWithUrls);
+            return res.status(200).json({transformedData:productsWithUrls,sizeIsNotNull})
         }else{
             const sizeIsNotNull = data
             .filter(item => item.size !== null)
                 .map(item => item.size);
+                const productUrlsArray = data.map(item => item.producturl);
+
+                console.log('before',productUrlsArray);
+
+                const preSignedUrls = [];
+
+                for (const productUrl of productUrlsArray) {
+                  const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
+                  preSignedUrls.push(photoUrl);
+                }
+
+
+
                 const transformedData = data.map(({ size, quantity,feature_id }) => ({ size, quantity ,feature_id}));
-            console.log(transformedData);
-            return res.status(200).json({transformedData,sizeIsNotNull})
+
+                const productsWithUrls = transformedData.map((item, index) => ({
+                  ...item,
+                  photoUrl: preSignedUrls[index],
+                }));  
+            console.log(productsWithUrls);
+            return res.status(200).json({transformedData:productsWithUrls,sizeIsNotNull})
         }
 
         

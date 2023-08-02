@@ -162,7 +162,7 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
         const{order_id}=req.params;
         const {accessToken} = req;
         const ordered=await pool.query('SELECT * FROM orders o,order_items I WHERE o.customer_id=$2 AND isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id  ',[order_id,customer.id]);
-        console.log(ordered);
+        console.log('ordered',ordered);
         return res.status(200).json({ordered:ordered.rows,accessToken:accessToken});
     } catch (error) {
         console.error(error);
