@@ -11,7 +11,6 @@ CREATE TABLE products (
 	color varchar(50),
     discount DECIMAL(10, 2) DEFAULT 0.00,
     description TEXT,
-    productUrl TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
@@ -38,6 +37,7 @@ CREATE TABLE orders (
     order_date TIMESTAMP DEFAULT NOW(),
     total_amount DECIMAL(10, 2),
     isOrdered boolean DEFAULT false,
+    isAccepted boolean DEFAULT false,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
@@ -48,8 +48,7 @@ CREATE TABLE order_items (
     quantity INTEGER,
     pattern varchar(100),
     price DECIMAL(10, 2),
-	size varchar(20) DEFAULT '',
-	size_i integer DEFAULT 0,
+	size varchar(25),
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
@@ -57,11 +56,23 @@ CREATE TABLE order_items (
 CREATE TABLE feature (
     feature_id SERIAL PRIMARY KEY,
     product_id INTEGER,
-    size VARCHAR(20) DEFAULT '',
-    size_i INTEGER DEFAULT 0,
+    size_id integer ,
+    color integer,
     quantity INTEGER,
-    featureUrl TEXT,
-    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+    featureUrl varchar(100),
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+    FOREIGN KEY (color_id) REFERENCES colors(color_id),
+    FOREIGN KEY (size_id) REFERENCES sizes(size_id)
+);
+
+CREATE TABLE colors(
+    color_id SERIAL PRIMARY KEY,
+    color varchar(25)
+
+);
+CREATE TABLE sizes(
+    size_id SERIAL PRIMARY KEY,
+    size varchar(25)
 );
 
 create table refresh_tokens(

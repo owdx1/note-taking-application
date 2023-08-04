@@ -222,6 +222,23 @@ shopRouter.get('/', async (req, res) => {
         const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
         preSignedUrls.push(photoUrl);
       }
+
+      const names = ['takimah', 'takimura', 'john', 'takimoto', 'tom', 'takim'];
+
+// Filtering and indexing names
+const filteredNames = names.filter(name => name.startsWith('takim'));
+
+// Indexing the filtered names in an array
+const indexedNames = filteredNames.map((name, index) => `${name} - Index: ${index}`);
+
+console.log(indexedNames);
+
+const objectsList = [];
+    const listStream = minioClient.listObjects('ecommerce', '', true);
+  
+    listStream.on('data', (obj) => {
+      console.log('minio',obj);
+    });
   
       // Combine the original data with the pre-signed URLs
       const productsWithUrls = data.map((item, index) => ({

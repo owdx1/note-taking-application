@@ -92,20 +92,35 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
         return res.status(500).send('Server error');
     } 
     
-})
+});
 
 adminRouter.get('/products/:product_id', adminTokenValidator , async (req, res) => {
     const{product_id} = req.params;
     try {
 
-        const product = await pool.query('SELECT * FROM products WHERE product_id = $1' , [product_id]);
+        const product = await pool.query('SELECT * FROM products WHERE p.product_id = $1 and p.product_id=f.product_id' , [product_id]);
         return res.status(200).json(product.rows);
         
     } catch (error) {
         console.error(error);
         return res.status(500).send('Server error');
     } 
-})
+});
+
+
+adminRouter.get('/products/:product_id/:feature_id', adminTokenValidator , async (req, res) => {
+    const{product_id,feature_id} = req.params;
+    try {
+
+        const product = await pool.query('SELECT * FROM products WHERE p.product_id = $1 and p.product_id=f.product_id and f.feature_id=$2' , [product_id,feature_id]);
+        return res.status(200).json(product.rows);
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    } 
+});
+
 
 adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async (req, res) => {
 
