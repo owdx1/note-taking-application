@@ -219,14 +219,17 @@ adminRouter.post('/acceptOrders',adminTokenValidator,async(req,res)=>{
             for (const stock of availableStock) {
                 const feature_id = stock.feature_id;
                 const quantity = stock.quantity;
-                
+                const product_id=stock.product_id;
                 const result = await pool.query('SELECT quantity from feature where feature_id = $1', [feature_id]);
+                const numberOfBestSellerResult=await pool.query('SELECT bestSeller from products WHERE product_id=$1',[product_id]);
+                const numberOBS=numberOfBestSellerResult.rows[0].bestSeller;
+
                 const availableStock = result.rows[0].quantity;
               
-              
-                const setquantity = availableStock - quantity;
-              
                 
+                const setquantity = availableStock - quantity;
+                 const newNumberOBS=numberOBS+quantity;
+                await pool.query('UPDATE products SET bestSeller=$1 WHERE product_id=$2',[newNumberOBS,product_id]);
                 await pool.query('UPDATE feature SET quantity = $1 WHERE feature_id = $2', [setquantity, feature_id]);
             }}
         return res.status(200).json({adminToken:adminToken,message:"Sipariş onaylandı, stok güncellendi"});
@@ -237,6 +240,19 @@ adminRouter.post('/acceptOrders',adminTokenValidator,async(req,res)=>{
         return res.status(500).send('Server error');
     }
 });
+adminRouter.put('/set-products-of-week/:product_id',adminTokenValidator,async(req,res)=>{
+    try {
+        const{product_id}=req.params;
+        await pool.query('UPDATE products SET isProductOfTheWeek=true WHERE product_id=$1',[product_id]);
+
+
+        return res.status(200).json({adminToken:adminToken,message:"Ürün eklendi"});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    }
+})
 
 
 

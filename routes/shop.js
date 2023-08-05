@@ -104,42 +104,38 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
 
         
          
-          const avilableProduct=await pool.query("select *  from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size_i=f.size_i and o.size=f.size and f.feature_id=$2",[newOrderId,currentFeatureId]);
+          const avilableProduct=await pool.query("select *  from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size=f.size and f.feature_id=$2",[newOrderId,currentFeatureId]);
           //!!!!!!!!!!!!!!!!!!!!
-          if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekle
-            if(category===6){
-              const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size_i) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);
-              
-            }
-            else{const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);
-        }
+          if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekl
+            const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);
+        
         }
           else{
 
+
+
             let oldQuantity; // Declare the variable outside the if block
             let oldPrice
-        if (category === 6) {
-         const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size_i=$3", [newOrderId, product_id, size]);
-        const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2 and size_i=$3", [newOrderId, product_id,size]);
-           console.log(oldPriceResult.rows);
-        oldPrice=parseFloat(oldPriceResult.rows[0].price);
-          oldQuantity = parseInt(oldQuantityResult.rows[0].quantity);
-        }   else {
+         
           const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size=$3", [newOrderId, product_id, size]);
           const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2 and size=$3", [newOrderId, product_id,size]);
           oldPrice=parseFloat(oldPriceResult.rows[0].price);
 
          oldQuantity = parseInt(oldQuantityResult.rows[0].quantity);
-        }
+        
 
         let newPrice;
         let newQuantity;
             //const oldPrice = parseFloat(oldPriceResult.rows[0].price);
             newQuantity=oldQuantity+quantity;
             newPrice = totalAmount+oldPrice;
-            if(category===6){const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size_i=$5",[newQuantity,newPrice,product_id,newOrderId,size]); }
-            else{const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size=$5",[newQuantity,newPrice,product_id,newOrderId,size]);
-        }
+            const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size=$5",[newQuantity,newPrice,product_id,newOrderId,size]);
+        
+
+
+
+
+
         }
           const productNum = await getBasketItemCount(customer.id);
            console.log("real:",productNum);
@@ -269,30 +265,7 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
         const productQuantity=data.quantity;
 
 
-        if(rawData.rows[0].category_id===6){//available sizelari döndürüyor
-            const sizeIsNotNull = data
-            .filter(item => item.size_i !== null)
-                .map(item => item.size_i);
-
-                const productUrlsArray = data.map(item => item.producturl);
-
-                console.log('before',productUrlsArray);
-                const preSignedUrls = [];
-
-               for (const productUrl of productUrlsArray) {
-                const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
-               preSignedUrls.push(photoUrl);
-                  }
-
-                  const transformedData = data.map(({ size, quantity,feature_id }) => ({ size, quantity ,feature_id}));
-
-                  const productsWithUrls = transformedData.map((item, index) => ({
-                    ...item,
-                    photoUrl: preSignedUrls[index],
-                  }));  
-              console.log(productsWithUrls);
-            return res.status(200).json({transformedData:productsWithUrls,sizeIsNotNull})
-        }else{
+        
             const sizeIsNotNull = data
             .filter(item => item.size !== null)
                 .map(item => item.size);
@@ -317,7 +290,7 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
                 }));  
             console.log(productsWithUrls);
             return res.status(200).json({transformedData:productsWithUrls,sizeIsNotNull})
-        }
+        
 
         
         
@@ -325,7 +298,23 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
         console.error(error);
         return res.status(500).send('Server Error');
     }
-})
+});
+shopRouter.get('/products-of-week',async(req,res)=>{
+  try {
+      const productsOfWeek=await pool.query('SELECT * FROM products WHERE isProductOfTheWeek=true ');
+      return res.status(200).json({productsOfWeek});
+
+
+  } catch (error) {
+    console.error(error);
+        return res.status(500).send('Server Error');
+  }
+});
+
+
+
+
+
 /*
 
 

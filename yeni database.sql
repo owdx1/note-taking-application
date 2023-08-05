@@ -11,6 +11,8 @@ CREATE TABLE products (
 	color varchar(50),
     discount DECIMAL(10, 2) DEFAULT 0.00,
     description TEXT,
+    isProductOfTheWeek boolean DEFAULT false,
+    bestSeller integer DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (category_id) REFERENCES categories(category_id)

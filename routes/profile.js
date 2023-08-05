@@ -135,7 +135,7 @@ profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(
     // burası eklendi
     const {totalPrice} = req.body;
     // burası eklendi
-
+    console.log(totalPrice);
 
 
     await pool.query('UPDATE orders SET isOrdered=true WHERE order_id=$1',[orderId]);
