@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const adminTokenValidator = require('../middlewares/adminTokenValidator');
 const pool = require('../db');
 
+const minioClient=require('../minio');
 
 
 

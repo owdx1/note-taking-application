@@ -215,10 +215,11 @@ shopRouter.get('/', async (req, res) => {
       const preSignedUrls = [];
 
       for (const productUrl of productUrlsArray) {
-        const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
-        preSignedUrls.push(photoUrl);
+        console.log(productUrl);
+       // const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
+       // preSignedUrls.push(photoUrl);
       }
-
+/*
       const names = ['takimah', 'takimura', 'john', 'takimoto', 'tom', 'takim'];
 
 // Filtering and indexing names
@@ -235,7 +236,7 @@ const objectsList = [];
     listStream.on('data', (obj) => {
       console.log('minio',obj);
     });
-  
+  */
       // Combine the original data with the pre-signed URLs
       const productsWithUrls = data.map((item, index) => ({
         ...item,
