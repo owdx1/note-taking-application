@@ -14,7 +14,6 @@ const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
 
 
-const axios = require('axios');
 
 const bucketName = 'ecommerce';
 
@@ -202,59 +201,66 @@ shopRouter.put('/update-quantity/:product_id',accessTokenValidator,refreshTokenV
     }
 });
 
-
-
-
 shopRouter.get('/', async (req, res) => {
-    try {
-      const rawData = await pool.query('SELECT * FROM products');
-      const data = rawData.rows;
-      const productUrlsArray = data.map(item => item.producturl);
+  try {
+    const rawData = await pool.query('SELECT * FROM products');
+    const data = rawData.rows;
 
+    const preSignedUrlsArray = [];
 
-      const preSignedUrls = [];
+    async function generatePreSignedUrls() {
+      for (const d of data) {
+        const productPhoto = `${d.category_id}-${d.product_name}`;
+        console.log(productPhoto);
 
-      for (const productUrl of productUrlsArray) {
-        console.log(productUrl);
-       // const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
-       // preSignedUrls.push(photoUrl);
+        const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+
+        const productUrls = [];
+
+        await new Promise((resolve, reject) => {
+          listStream.on('data', async (obj) => {
+            try {
+              const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+
+              // Customize the data associated with each photo URL
+              const photoData = {
+                url: photoUrlMinio,
+                //description: 'Description of the photo',
+                //otherData: 'Other data related to the photo',
+              };
+
+              productUrls.push(photoData);
+            } catch (error) {
+              console.error('Error generating pre-signed URL:', error);
+            }
+          });
+
+          listStream.on('end', () => {
+            preSignedUrlsArray.push(productUrls);
+            resolve(); // Resolve the promise when the stream ends
+          });
+
+          listStream.on('error', (err) => {
+            reject(err); // Reject the promise if an error occurs
+          });
+        });
       }
-/*
-      const names = ['takimah', 'takimura', 'john', 'takimoto', 'tom', 'takim'];
+    }
 
-// Filtering and indexing names
-const filteredNames = names.filter(name => name.startsWith('takim'));
+    await generatePreSignedUrls();
 
-// Indexing the filtered names in an array
-const indexedNames = filteredNames.map((name, index) => `${name} - Index: ${index}`);
+    const productsWithUrls = data.map((item, index) => ({
+      ...item,
+      photoUrls: preSignedUrlsArray[index],
+    }));
 
-console.log(indexedNames);
-
-const objectsList = [];
-    const listStream = minioClient.listObjects('ecommerce', '', true);
-  
-    listStream.on('data', (obj) => {
-      console.log('minio',obj);
-    });
-  */
-      // Combine the original data with the pre-signed URLs
-      const productsWithUrls = data.map((item, index) => ({
-        ...item,
-        photoUrl: preSignedUrls[index],
-      }));
-
-
-
-
-      console.log(productsWithUrls);
-
-    return res.status(200).json({data:productsWithUrls});
+    console.log(productsWithUrls);
+    return res.status(200).json({ data: productsWithUrls });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "An error occurred while fetching the products" });
   }
-  });
-
+});
 
 
 
@@ -267,9 +273,7 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
 
 
         
-            const sizeIsNotNull = data
-            .filter(item => item.size !== null)
-                .map(item => item.size);
+            
                 const productUrlsArray = data.map(item => item.producturl);
 
                 console.log('before',productUrlsArray);
@@ -290,7 +294,7 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
                   photoUrl: preSignedUrls[index],
                 }));  
             console.log(productsWithUrls);
-            return res.status(200).json({transformedData:productsWithUrls,sizeIsNotNull})
+            return res.status(200).json({transformedData:productsWithUrls})
         
 
         

@@ -276,6 +276,88 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
 });
 
 
+//genel ürün  ve alt dalı
+
+adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
+    try {
+        const{product_id}=req.params;
+        const rawData = await pool.query('SELECT * FROM products P,feature F WHERE P.product_id=$1 AND F.product_id=P.product_id',[product_id]);
+        let data=rawData.rows;
+        const {adminToken}=req;
+
+        const productQuantity=data.quantity;
+
+
+        
+            
+                const productUrlsArray = data.map(item => item.producturl);
+
+                console.log('before',productUrlsArray);
+
+                const preSignedUrls = [];
+
+                for (const productUrl of productUrlsArray) {
+                  const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
+                  preSignedUrls.push(photoUrl);
+                }
+
+
+
+                const transformedData = data.map(({ size, quantity,feature_id }) => ({ size, quantity ,feature_id}));
+
+                const productsWithUrls = transformedData.map((item, index) => ({
+                  ...item,
+                  photoUrl: preSignedUrls[index],
+                }));  
+            console.log(productsWithUrls);
+            return res.status(200).json({transformedData:productsWithUrls,adminToken:adminToken})
+        
+
+        
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
+// genel ürün güncelleme
+adminRouter.put('/update-product/:product_id', adminTokenValidator, async (req, res) => {
+    try {
+        const { product_id } = req.params;
+        const updatedFeature = req.body; // Assuming the request body is an array of JSON objects
+        const { adminToken } = req;
+        //updatedFeature : [{newSize:'XL',newQuantity:17},{newSize:'XLL',newQuantity:11},{newSize:'L',newQuantity:15}]
+        for (const feature of updatedFeature) {
+            const newQuantity = feature.newQuantity;
+            const newSize = feature.newSize;
+
+            if (newSize === null) {
+                await pool.query('UPDATE feature SET quantity=$1 WHERE product_id=$2 ', [newQuantity, product_id]);
+            } else {
+                const existingFeature = await pool.query('SELECT * FROM feature WHERE product_id=$1 AND size=$2', [product_id, newSize]);
+
+                if (existingFeature.rows.length > 0) {
+                    await pool.query('UPDATE feature SET quantity=$1 WHERE product_id=$2 AND size=$3', [newQuantity, product_id, newSize]);
+                } else {
+                    await pool.query('INSERT INTO feature(product_id, size, quantity) VALUES($1, $2, $3)', [product_id, newSize, newQuantity]);
+                }
+            }
+        }
+
+        return res.status(200).json({
+            adminToken,
+            message: 'Ürün başarıyla güncellendi'
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
+
+
+
+
+
 
 
 module.exports = adminRouter;
