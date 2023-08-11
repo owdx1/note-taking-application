@@ -44,36 +44,6 @@ async function getBasketItemCount(customerId) {
 
 
 
-shopRouter.get('/basket',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
-    try {
-        const {customer,accessToken}=req;
-        const{id}=customer;
-        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
-        const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
-        
-        //const cart=await pool.query("SELECT DISTINCT P.product_name,p.color,o.price,F.size_i,F.size,F.quantity from order_items o,products p ,feature F WHERE order_id=$1 and o.product_id=p.product_id and p.product_id=F.product_id",[newOrderId]);
-        const cart=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[newOrderId]);
-        const data=cart.rows;
-        
-      // const newData = data.map(({ quantity, ...rest }) => rest);
-
-    
-                
-                const newData = data.map(item => {
-                    if (item.size === null) {
-                        delete item.size;
-                    }
-                    if(item.size_i===null){delete item.size_i;}
-                    return item;
-                });
-
-        return res.status(200).json({customer,newData,accessToken:accessToken});
-        
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({message:'Cannot server error'});
-    }
-});
 
 
 
@@ -211,7 +181,7 @@ shopRouter.get('/', async (req, res) => {
     async function generatePreSignedUrls() {
       for (const d of data) {
         const productPhoto = `${d.category_id}-${d.product_name}`;
-        console.log(productPhoto);
+        //console.log(productPhoto);
 
         const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
 
@@ -254,7 +224,7 @@ shopRouter.get('/', async (req, res) => {
       photoUrls: preSignedUrlsArray[index],
     }));
 
-    console.log(productsWithUrls);
+    //console.log(productsWithUrls);
     return res.status(200).json({ data: productsWithUrls });
   } catch (error) {
     console.error(error);
@@ -272,29 +242,66 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
         const productQuantity=data.quantity;
 
 
+        const preSignedUrlsArray = [];
+
+    async function generatePreSignedUrls() {
+      for (const d of data) {
+        const productPhoto = `${d.category_id}-${d.product_name}-${d.size}`;
+        //console.log(productPhoto);
+
+        const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+
+        const productUrls = [];
+
+        await new Promise((resolve, reject) => {
+          listStream.on('data', async (obj) => {
+            try {
+              
+              const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+
+              // Customize the data associated with each photo URL
+              const photoData = {
+                url: photoUrlMinio,
+                //description: 'Description of the photo',
+                //otherData: 'Other data related to the photo',
+              };
+
+              productUrls.push(photoData);
+            } catch (error) {
+              console.error('Error generating pre-signed URL:', error);
+            }
+          });
+
+          listStream.on('end', () => {
+            preSignedUrlsArray.push(productUrls);
+            resolve(); // Resolve the promise when the stream ends
+          });
+
+          listStream.on('error', (err) => {
+            reject(err); // Reject the promise if an error occurs
+          });
+        });
+      }
+    }
+
+    await generatePreSignedUrls();
+
+    const productsWithUrls = data.map((item, index) => ({
+      ...item,
+      photoUrls: preSignedUrlsArray[index],
+    }));
+
         
             
-                const productUrlsArray = data.map(item => item.producturl);
-
-                console.log('before',productUrlsArray);
-
-                const preSignedUrls = [];
-
-                for (const productUrl of productUrlsArray) {
-                  const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
-                  preSignedUrls.push(photoUrl);
-                }
+                
 
 
 
-                const transformedData = data.map(({ size, quantity,feature_id }) => ({ size, quantity ,feature_id}));
+    
 
-                const productsWithUrls = transformedData.map((item, index) => ({
-                  ...item,
-                  photoUrl: preSignedUrls[index],
-                }));  
-            console.log(productsWithUrls);
-            return res.status(200).json({transformedData:productsWithUrls})
+                  
+        console.log(productsWithUrls);
+         return res.status(200).json({transformedData:productsWithUrls})
         
 
         

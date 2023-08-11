@@ -45,26 +45,17 @@ adminRouter.post('/add-a-product' ,adminTokenValidator , async (req , res) => {
             size,quantity
         } = req.body;
 
-                const availableInProduct=await pool.query("SELECT * FROM products P,feature F WHERE P.product_id=F.product_id and P.category_id=$1 and P.color=$2 and F.size=$3 ",[category_id,color,size]);
-            if(availableInProduct.rows.length===0){
+        const availableInProduct=await pool.query("SELECT * FROM products P,feature F WHERE P.product_id=F.product_id and  P.category_id=$1 and P.color=$2 and F.size=$3 P.product_name=$4",[category_id,color,size,product_name]);
+        if(availableInProduct.rows.length===0){
                     
-           const prId=await pool.query("INSERT INTO products (product_name, category_id, price,discount, color, description) VALUES($1,$2,$3,$4,$5,$6) RETURNING product_id",
-           [product_name,category_id,price ,discount,color   ,description]);
-           console.log("prid",prId.rows[0].product_id);
-           const productId=prId.rows[0].product_id;
-           console.log(productId);
+        const prId=await pool.query("INSERT INTO products (product_name, category_id, price,discount, color, description) VALUES($1,$2,$3,$4,$5,$6) RETURNING product_id",
+        [product_name,category_id,price ,discount,color   ,description]);
+        console.log("prid",prId.rows[0].product_id);
+        const productId=prId.rows[0].product_id;
+        console.log(productId);
 
-               if(category_id===6){
-                   
-                   
-                   await pool.query("INSERT INTO feature(product_id,size_i,quantity) values($1,$2,$3)",[productId,size,quantity]);
-               }
-               else{
-                  
-                  
-                   
-                   await pool.query("INSERT INTO feature(product_id,size,quantity) values($1,$2,$3)",[productId,size,quantity]);
-               }
+        await pool.query("INSERT INTO feature(product_id,size,quantity) values($1,$2,$3)",[productId,size,quantity]);
+               
 
 
 
@@ -87,7 +78,55 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
         // bu dashboard'da toplam satılan ürün sayısı, kazanılan toplam miktar, ve ürünlerin bulunduğu bir sekme yer alacak.
         const products  = productsAll.rows;
 
-        res.status(200).json({products , admin}); 
+        
+        const preSignedUrlsArray = [];
+        
+        async function generatePreSignedUrls() {
+          for (const d of products) {
+            const productPhoto = `${d.category_id}-${d.product_name}-${d.size}`;
+            const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+        
+            const productUrls = [];
+        
+            await new Promise((resolve, reject) => {
+              listStream.on('data', async (obj) => {
+                try {
+                  const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+                  const photoData = {
+                    url: photoUrlMinio,
+                  };
+                  productUrls.push(photoData);
+                } catch (error) {
+                  console.error('Error generating pre-signed URL:', error);
+                }
+              });
+        
+              listStream.on('end', () => {
+                preSignedUrlsArray.push(productUrls);
+                resolve();
+              });
+        
+              listStream.on('error', (err) => {
+                reject(err);
+              });
+            });
+          }
+        }
+        
+        await generatePreSignedUrls();
+        
+        const productsWithUrls = products.map((item, index) => ({
+          ...item,
+          photoUrls: preSignedUrlsArray[index],
+        }));
+        
+        console.log(productsWithUrls);
+        
+
+
+
+
+        res.status(200).json({products:productsWithUrls , admin}); 
     } catch (error) {
         console.error(error);
         return res.status(500).send('Server error');
@@ -99,7 +138,7 @@ adminRouter.get('/products/:product_id', adminTokenValidator , async (req, res) 
     const{product_id} = req.params;
     try {
 
-        const product = await pool.query('SELECT * FROM products WHERE p.product_id = $1 and p.product_id=f.product_id' , [product_id]);
+        const product = await pool.query('SELECT P.*,F.size FROM products P,feature F WHERE P.product_id = $1 and P.product_id=F.product_id ' , [product_id]);
         return res.status(200).json(product.rows);
         
     } catch (error) {
@@ -145,7 +184,7 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
     }
 })
 
-adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {// ürünün genel özelliklerini günceller
+adminRouter.put('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {// ürünün genel özelliklerini günceller
     const {product_id} = req.params;
 
     const { product_name,
@@ -156,7 +195,8 @@ adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (r
         size,
         discount,
         pattern,
-        description 
+        description,
+        productOfTheWeek 
     } = req.body;
 
     const product = await pool.query('SELECT * FROM products where product_id = $1' , [product_id]);
@@ -165,35 +205,15 @@ adminRouter.post('/patch-a-product/:product_id' , adminTokenValidator , async (r
         return res.status(404).send('Note not found')
     }
 
-    await pool.query('UPDATE products SET product_name = $1, category_id = $2, price = $3, color = $4, pattern = $5, description = $6,discount=$8 WHERE product_id = $7' , 
-    [ product_name, category_id, price, color, pattern, description, product_id,discount]);
+    await pool.query('UPDATE products SET product_name = $1, category_id = $2, price = $3, color = $4, pattern = $5, description = $6,discount=$8 ,isProductOfTheWeek=$9 WHERE product_id = $7' , 
+    [ product_name, category_id, price, color, pattern, description, product_id,discount,productOfTheWeek]);
 
     return res.status(200).json({message: 'Product updated successfully'});
 });
 
-adminRouter.get('/patch-a-product/:product_id/:feature_id' , adminTokenValidator , async (req , res) => {
-    const {product_id} = req.params;
-    const { size,
-        quantity
-    } = req.body;
 
 
 
-}) 
-
-adminRouter.put('/product-feature/:product_id/:feature_id',adminTokenValidator,async(res,req)=>{//ürünün alt özelliklerini günceller
-    try {
-        const{quantity}=req.body;
-        const query=await pool.query("UPDATE feature SET quantity=$1 WHERE product_id=$2 AND feature_id=$3",[quantity,product_id,feature_id]);
-
-       
-        return res.status(200).json({message: 'INNER product updated successfully'});
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server error');
-    }
-});
 
 adminRouter.get('/getOrders',adminTokenValidator,async(req,res)=>{
 
@@ -241,19 +261,7 @@ adminRouter.post('/acceptOrders',adminTokenValidator,async(req,res)=>{
         return res.status(500).send('Server error');
     }
 });
-adminRouter.put('/set-products-of-week/:product_id',adminTokenValidator,async(req,res)=>{
-    try {
-        const{product_id}=req.params;
-        await pool.query('UPDATE products SET isProductOfTheWeek=true WHERE product_id=$1',[product_id]);
 
-
-        return res.status(200).json({adminToken:adminToken,message:"Ürün eklendi"});
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server error');
-    }
-})
 
 
 

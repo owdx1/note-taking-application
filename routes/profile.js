@@ -10,6 +10,7 @@ const pool = require('../db');
 const accessTokenValidator = require('../middlewares/accessTokenValidator');
 const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
+const minioClient=require('../minio');
 
 
 
@@ -38,7 +39,7 @@ profileRouter.get('/' , accessTokenValidator, refreshTokenValidator , async (req
         const response = await pool.query('SELECT * FROM customers WHERE customer_id = $1' , [id]);
         const sendResponse = response.rows[0]; // burada yollanılan customerin içinde hashlı şifre de var, 
         // eğer olur da request intercept edilirse hashli şifreyi hackera vermis oluyoruz
-        return res.status(200).json({customer:sendResponse , accessToken:accessToken});
+        return res.status(200).json({customer:sendResponse , accessToken});
         
         
     } catch (error) {
@@ -168,13 +169,60 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
         const {customer} = req;
         const{order_id}=req.params;
         const {accessToken} = req;
-        const ordered=await pool.query('SELECT * FROM orders o,order_items I WHERE o.customer_id=$2 AND isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id  ',[order_id,customer.id]);
-        console.log('ordered',ordered);
-        return res.status(200).json({ordered:ordered.rows,accessToken:accessToken});
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server Error');
-    }
+        const data=await pool.query('SELECT distinct I.* FROM orders o,order_items I, products P,feature F WHERE o.customer_id=$2 AND o.isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id',[1,customer.id]);
+        //console.log('data',data.rows);
+        
+        const dataObject = data.rows;
+        //console.log(dataObject);
+        const preSignedUrlsArray = [];
+        
+        async function generatePreSignedUrls() {
+          for (const d of dataObject) {
+            const productPhoto = `${d.category_id}-${d.product_name}-${d.size}`;
+            const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+        
+            const productUrls = [];
+        
+            await new Promise((resolve, reject) => {
+              listStream.on('data', async (obj) => {
+                try {
+                  const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+                  const photoData = {
+                    url: photoUrlMinio,
+                  };
+                  productUrls.push(photoData);
+                } catch (error) {
+                  console.error('Error generating pre-signed URL:', error);
+                }
+              });
+        
+              listStream.on('end', () => {
+                preSignedUrlsArray.push(productUrls);
+                resolve();
+              });
+        
+              listStream.on('error', (err) => {
+                reject(err);
+              });
+            });
+          }
+        }
+        
+        await generatePreSignedUrls();
+        
+        const productsWithUrls = dataObject.map((item, index) => ({
+          ...item,
+          photoUrls: preSignedUrlsArray[index],
+        }));
+        
+        console.log(productsWithUrls);
+        
+        return res.status(200).json({ordered:productsWithUrls, accessToken: accessToken });
+        
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send('Server Error');
+  }
 });
 
 profileRouter.post('/update-info' , accessTokenValidator, refreshTokenValidator, async (req , res) =>{
