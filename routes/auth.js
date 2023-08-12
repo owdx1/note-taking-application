@@ -61,7 +61,7 @@ require('dotenv').config();
 
             await pool.query('INSERT INTO customers (first_name, last_name, email, address, city, postal_code, country, password , phone)  VALUES ($1, $2,$3,$4,$5,$6,$7,$8,$9)', 
                 [firstname, lastname, email, address, city, postalcode, country, bcryptPassword, phoneNumber]);
-
+            
             return res.status(200).json({message: 'Başarıyla kayıt olundu!' , loggedIn: true});
 
             //auto-login işlemleri kaldırıldı

@@ -73,10 +73,10 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
 
         
          
-          const avilableProduct=await pool.query("select *  from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size=f.size and f.feature_id=$2",[newOrderId,currentFeatureId]);
+          const avilableProduct=await pool.query("select *  from products p,order_items o,feature f , sizes s , colors c where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size=s.size and f.feature_id=$2 , f.size_id=s.size_id and c.color_id=f.color_id and c.color=o.color",[newOrderId,currentFeatureId]);
           //!!!!!!!!!!!!!!!!!!!!
           if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekl
-            const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size) values($1,$2,$3,$4,$5)",[newOrderId,product_id,quantity,totalAmount,size]);
+            const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size,color) values($1,$2,$3,$4,$5,$6)",[newOrderId,product_id,quantity,totalAmount,size,color]);
         
         }
           else{
@@ -86,8 +86,8 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
             let oldQuantity; // Declare the variable outside the if block
             let oldPrice
          
-          const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size=$3", [newOrderId, product_id, size]);
-          const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2 and size=$3", [newOrderId, product_id,size]);
+          const oldQuantityResult = await pool.query("SELECT quantity from order_items WHERE order_id=$1 AND product_id=$2 and size=$3 and color=$4", [newOrderId, product_id, size,color]);
+          const oldPriceResult=await pool.query("SELECT price FROM order_items WHERE order_id = $1 AND product_id = $2 and size=$3 and color=$4", [newOrderId, product_id,size,color]);
           oldPrice=parseFloat(oldPriceResult.rows[0].price);
 
          oldQuantity = parseInt(oldQuantityResult.rows[0].quantity);
@@ -98,7 +98,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
             //const oldPrice = parseFloat(oldPriceResult.rows[0].price);
             newQuantity=oldQuantity+quantity;
             newPrice = totalAmount+oldPrice;
-            const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size=$5",[newQuantity,newPrice,product_id,newOrderId,size]);
+            const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size=$5,color=$6",[newQuantity,newPrice,product_id,newOrderId,size,color]);
         
 
 
@@ -237,7 +237,7 @@ shopRouter.get('/', async (req, res) => {
 shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
     try {
         const{product_id}=req.params;
-        const rawData = await pool.query('SELECT * FROM products P,feature F WHERE P.product_id=$1 AND F.product_id=P.product_id',[product_id]);
+        const rawData = await pool.query('SELECT * FROM products P,feature F, colors C,sizes S WHERE P.product_id=$1 AND F.product_id=P.product_id and C.color_id=F.color_id and S.size_id=F.size_id',[product_id]);
         let data=rawData.rows;
         const productQuantity=data.quantity;
 

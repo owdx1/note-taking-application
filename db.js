@@ -16,6 +16,6 @@ const pool = new Pool({
   password: "0539",
   host: "localhost",
   port:"5432",
-  database: "ecom3"  
+  database: "ecom4"  
 });
 module.exports = pool;

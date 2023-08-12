@@ -35,7 +35,7 @@ profileRouter.get('/' , accessTokenValidator, refreshTokenValidator , async (req
         const {id} = customer;
         const {accessToken} = req; // bunu neden aldım hatırlamıyorum
         console.log(customer); // bu silinecek
-
+        await pool.query("INSERT INTO orders(customer_id,total_amount) VALUES($1,$2)",[id,0]);
         const response = await pool.query('SELECT * FROM customers WHERE customer_id = $1' , [id]);
         const sendResponse = response.rows[0]; // burada yollanılan customerin içinde hashlı şifre de var, 
         // eğer olur da request intercept edilirse hashli şifreyi hackera vermis oluyoruz
@@ -63,7 +63,7 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
 
         const orderId= await getNewOrderId(customer_id);
         //const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
-        const basket=await pool.query("select *,f.quantity as totalquantity,o.quantity as orderquantity  from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size_i=f.size_i and o.size=f.size",[orderId]);
+        const basket=await pool.query("select *,f.quantity as totalquantity,o.quantity as orderquantity  from products p,order_items o,feature f ,sizes s, colors c where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and c.color_id=f.color_id and f.size_id=s.size_id and o.size=s.size and o.color=c.color",[orderId]);
 
         //!!!!! * 'ı elemen gerek sonradan
 
@@ -118,7 +118,7 @@ profileRouter.post('/cart/delete-a-product',accessTokenValidator,refreshTokenVal
         const customer_id=customer.id;
         const orderId= await getNewOrderId(customer_id);
 
-    await pool.query("DELETE FROM order_items WHERE   order_id=$2 and order_item_id in (select o.order_item_id from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id  and o.size_i=f.size_i and o.size=f.size and f.feature_id=$3  and p.product_id =$1 )",[product_id,orderId,feature_id]);
+    await pool.query("DELETE FROM order_items WHERE   order_id=$2 and order_item_id in (select o.order_item_id from products p,order_items o,feature f where p.product_id=o.product_id and p.product_id=f.product_id    and f.feature_id=$3  and p.product_id =$1 )",[product_id,orderId,feature_id]);
 
     return res.status(200).json({message:"Ürün Başarıyla Silindi!!!" , accessToken: accessToken});
 
@@ -169,7 +169,7 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
         const {customer} = req;
         const{order_id}=req.params;
         const {accessToken} = req;
-        const data=await pool.query('SELECT distinct I.* FROM orders o,order_items I, products P,feature F WHERE o.customer_id=$2 AND o.isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id',[1,customer.id]);
+        const data=await pool.query('SELECT distinct I.*,S.size,C.color FROM orders o,order_items I, products P,feature F ,colors C, sizes S WHERE o.customer_id=$2 AND o.isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id and C.color_id=F.color_id AND F.size_id=S.size_id',[1,customer.id]);
         //console.log('data',data.rows);
         
         const dataObject = data.rows;
