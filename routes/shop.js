@@ -73,7 +73,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
 
         
          
-          const avilableProduct=await pool.query("select *  from products p,order_items o,feature f , sizes s , colors c where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size=s.size and f.feature_id=$2 , f.size_id=s.size_id and c.color_id=f.color_id and c.color=o.color",[newOrderId,currentFeatureId]);
+          const avilableProduct=await pool.query("select *  from products p,order_items o,feature f , sizes s , colors c where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and o.size=s.size and f.feature_id=$2 and f.size_id=s.size_id and c.color_id=f.color_id and c.color=o.color",[newOrderId,currentFeatureId]);
           //!!!!!!!!!!!!!!!!!!!!
           if(avilableProduct.rows.length===0){//eğer daha önce  sepette yoksa ekle , varsa üzerine ekl
             const newQuery=await pool.query("INSERT INTO order_items(order_id,product_id,quantity,price,size,color) values($1,$2,$3,$4,$5,$6)",[newOrderId,product_id,quantity,totalAmount,size,color]);
