@@ -246,7 +246,7 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
 
     async function generatePreSignedUrls() {
       for (const d of data) {
-        const productPhoto = `${d.category_id}-${d.product_name}-${d.size}`;
+        const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
         //console.log(productPhoto);
 
         const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);

@@ -178,7 +178,7 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
         
         async function generatePreSignedUrls() {
           for (const d of dataObject) {
-            const productPhoto = `${d.category_id}-${d.product_name}-${d.size}`;
+            const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
             const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
         
             const productUrls = [];

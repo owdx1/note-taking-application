@@ -45,7 +45,7 @@ adminRouter.post('/add-a-product' ,adminTokenValidator , async (req , res) => {
             size,quantity
         } = req.body;
 
-        const availableInProduct=await pool.query("SELECT * FROM products P,feature F , sizes S , colors C WHERE P.product_id=F.product_id and  P.category_id=$1  and F.size=$3 and P.product_name=$4 and F.color_id=C.color_id and F.size_id=S.size_id C.color=$5 and S.size=$6",[category_id,color,size,product_name,color,size]);
+        const availableInProduct=await pool.query("SELECT * FROM products P,feature F , sizes S , colors C WHERE P.product_id=F.product_id and  P.category_id=$1   and P.product_name=$2 and F.color_id=C.color_id and F.size_id=S.size_id AND C.color=$3 and S.size=$4",[category_id,product_name,color,size]);
         if(availableInProduct.rows.length===0){
                     
         const prId=await pool.query("INSERT INTO products (product_name, category_id, price,discount, description) VALUES($1,$2,$3,$4,$5) RETURNING product_id",
@@ -87,7 +87,7 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
         
         async function generatePreSignedUrls() {
           for (const d of products) {
-            const productPhoto = `${d.category_id}-${d.product_name}-${d.size}`;
+            const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
             const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
         
             const productUrls = [];
