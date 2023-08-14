@@ -158,7 +158,8 @@ adminRouter.get('/products/:product_id/:feature_id', adminTokenValidator , async
     try {
 
         const product = await pool.query('SELECT P.*,S.size,C.color FROM products P,feature F ,sizes S, colors C WHERE P.product_id = $1 and P.product_id=F.product_id  And F.size_id=S.size_id and C.color_id=F.color_id and F.feature_id=$2' , [product_id,feature_id]);
-        return res.status(200).json(product.rows);
+        const productDetails=product.rows;
+        return res.status(200).json(productDetails);
         
     } catch (error) {
         console.error(error);
