@@ -138,28 +138,14 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
     
 });
 
-adminRouter.get('/products/:product_id', adminTokenValidator , async (req, res) => {
-    const{product_id} = req.params;
-    try {
-
-        const product = await pool.query('SELECT P.*,S.size,C.color FROM products P,feature F ,sizes S, colors C WHERE P.product_id = $1 and P.product_id=F.product_id  AND F.size_id=S.size_id and C.color_id=F.color_id ' , [product_id]);
-        const productDetails=product.rows;
-        return res.status(200).json(productDetails);
-        
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server error');
-    } 
-});
-
 
 adminRouter.get('/products/:product_id/:feature_id', adminTokenValidator , async (req, res) => {
     const{product_id,feature_id} = req.params;
     try {
 
-        const product = await pool.query('SELECT P.*,S.size,C.color FROM products P,feature F ,sizes S, colors C WHERE P.product_id = $1 and P.product_id=F.product_id  And F.size_id=S.size_id and C.color_id=F.color_id and F.feature_id=$2' , [product_id,feature_id]);
+        const product = await pool.query('SELECT P.*,S.size,C.color,F.quantity FROM products P,feature F ,sizes S, colors C WHERE P.product_id = $1 and P.product_id=F.product_id  And F.size_id=S.size_id and C.color_id=F.color_id and F.feature_id=$2' , [product_id,feature_id]);
         const productDetails=product.rows;
-        return res.status(200).json(productDetails);
+        return res.status(200).json({productDetails});
         
     } catch (error) {
         console.error(error);
@@ -296,36 +282,71 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
 adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
     try {
         const{product_id}=req.params;
-        const rawData = await pool.query('SELECT * FROM  feature F,products P,colors C,sizes S WHERE P.product_id=$1 AND F.product_id=P.product_id AND S.size_id=F.size_id AND C.color_id=F.color_id',[product_id]);
+        const rawData = await pool.query('SELECT * FROM products P,feature F, colors C,sizes S WHERE P.product_id=$1 AND F.product_id=P.product_id and C.color_id=F.color_id and S.size_id=F.size_id',[product_id]);
         let data=rawData.rows;
-        const {adminToken}=req;
-
         const productQuantity=data.quantity;
 
 
+        const preSignedUrlsArray = [];
+
+    async function generatePreSignedUrls() {
+      for (const d of data) {
+        const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
+        //console.log(productPhoto);
+
+        const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+
+        const productUrls = [];
+
+        await new Promise((resolve, reject) => {
+          listStream.on('data', async (obj) => {
+            try {
+              
+              const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+
+              // Customize the data associated with each photo URL
+              const photoData = {
+                url: photoUrlMinio,
+                //description: 'Description of the photo',
+                //otherData: 'Other data related to the photo',
+              };
+
+              productUrls.push(photoData);
+            } catch (error) {
+              console.error('Error generating pre-signed URL:', error);
+            }
+          });
+
+          listStream.on('end', () => {
+            preSignedUrlsArray.push(productUrls);
+            resolve(); // Resolve the promise when the stream ends
+          });
+
+          listStream.on('error', (err) => {
+            reject(err); // Reject the promise if an error occurs
+          });
+        });
+      }
+    }
+
+    await generatePreSignedUrls();
+
+    const productsWithUrls = data.map((item, index) => ({
+      ...item,
+      photoUrls: preSignedUrlsArray[index],
+    }));
+
         
             
-                const productUrlsArray = data.map(item => item.producturl);
-
-                console.log('before',productUrlsArray);
-
-                const preSignedUrls = [];
-
-                for (const productUrl of productUrlsArray) {
-                  const photoUrl = await minioClient.presignedGetObject('ecommerce', productUrl, 3600);
-                  preSignedUrls.push(photoUrl);
-                }
+                
 
 
 
-                const transformedData = data.map(({ size, quantity,feature_id }) => ({ size, quantity ,feature_id}));
+    
 
-                const productsWithUrls = transformedData.map((item, index) => ({
-                  ...item,
-                  photoUrl: preSignedUrls[index],
-                }));  
-            console.log(productsWithUrls);
-            return res.status(200).json({transformedData:productsWithUrls,adminToken:adminToken})
+                  
+        console.log(productsWithUrls);
+         return res.status(200).json({productDetails:productsWithUrls})
         
 
         
@@ -334,6 +355,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//�
         console.error(error);
         return res.status(500).send('Server Error');
     }
+    
 });
 // genel ürün güncelleme
 adminRouter.put('/update-product/:product_id:/feature_id', adminTokenValidator, async (req, res) => {
