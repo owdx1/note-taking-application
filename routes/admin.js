@@ -87,7 +87,7 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
         
         async function generatePreSignedUrls() {
           for (const d of products) {
-            const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
+            const productPhoto = `${d.category_id}-${d.product_name}`;
             const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
         
             const productUrls = [];
