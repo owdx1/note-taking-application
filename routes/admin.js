@@ -18,19 +18,25 @@ adminRouter.post('/login' ,  (req , res) => {
         res.status(401).send('Unauthorized access');
     }
     const payload = {
-        id : "simdilik dursun"
+        username:process.env.ADMIN_USERNAME,
+        password:process.env.ADMIN_PASSWORD
     } // buraya ne koyacağımdan emin değilim
 
     const adminToken = jwt.sign(payload , process.env.ADMIN_TOKEN_SECRET , {expiresIn: "1d"});
-    
-    res.status(200).json({message: "admin successfully logged in" , adminToken : adminToken})
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+    console.log('admin',adminToken);
+    res.status(200).json({
+        message: 'Admin successfully logged in',
+        adminToken: adminToken,
+        refreshToken: refreshToken
+    });
 
 });
 // admin logout front endde gerçekleştirilecek
 
 adminRouter.post('/add-a-product' ,adminTokenValidator , async (req , res) => {
-    const {admin} = req;
-    console.log(admin); // bu admin bilgilerini içeren kısım, customer bilgilerine ihtiyacımız var ama admin bilgilerine ihtiyacımız tam
+    const {adminToken} = req;
+     // bu admin bilgilerini içeren kısım, customer bilgilerine ihtiyacımız var ama admin bilgilerine ihtiyacımız tam
                         // anlamıyla yok çünkü adminin kim olduğunu ve bilgilerini biliyoruz zaten. customer için kesinlikle yapılması
                         // gereken bu durum admin için geçerli değil ama yine de burda dursun el alışkanlığı olarak.
     
@@ -63,10 +69,10 @@ adminRouter.post('/add-a-product' ,adminTokenValidator , async (req , res) => {
 
 
 
-       return res.status(200).json({message: 'New product added successfully!'});
+       return res.status(200).json({message: 'New product added successfully!',adminToken});
             }
         else{
-            return res.status(500).json({message: 'Product already available!'});
+            return res.status(500).json({message: 'Product already available!',adminToken});
         }
 
     } catch (error) {
@@ -76,7 +82,7 @@ adminRouter.post('/add-a-product' ,adminTokenValidator , async (req , res) => {
 });
 
 adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
-    const {admin} = req;
+    const {adminToken} = req;
     try {
         const productsAll = await pool.query('SELECT * FROM products');//anasayfada yayınlanan ürünler 
         // bu dashboard'da toplam satılan ürün sayısı, kazanılan toplam miktar, ve ürünlerin bulunduğu bir sekme yer alacak.
@@ -124,13 +130,13 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
           photoUrls: preSignedUrlsArray[index],
         }));
         
-        console.log(productsWithUrls);
+        //console.log(productsWithUrls);
         
 
 
 
 
-        res.status(200).json({products:productsWithUrls , admin}); 
+        res.status(200).json({products:productsWithUrls , adminToken}); 
     } catch (error) {
         console.error(error);
         return res.status(500).send('Server error');
@@ -141,11 +147,12 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
 
 adminRouter.get('/products/:product_id/:feature_id', adminTokenValidator , async (req, res) => {
     const{product_id,feature_id} = req.params;
+    const{adminToken}=req;
     try {
 
         const product = await pool.query('SELECT P.*,S.size,C.color,F.quantity FROM products P,feature F ,sizes S, colors C WHERE P.product_id = $1 and P.product_id=F.product_id  And F.size_id=S.size_id and C.color_id=F.color_id and F.feature_id=$2' , [product_id,feature_id]);
         const productDetails=product.rows;
-        return res.status(200).json({productDetails});
+        return res.status(200).json({productDetails,adminToken});
         
     } catch (error) {
         console.error(error);
@@ -157,7 +164,7 @@ adminRouter.get('/products/:product_id/:feature_id', adminTokenValidator , async
 adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async (req, res) => {
 
     const {product_id} = req.params;
-
+    const{adminToken}=req;
     try {
 
         const product = await pool.query('SELECT * FROM products WHERE product_id = $1', [product_id]);
@@ -168,7 +175,7 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
         }
         
         await pool.query('DELETE FROM products WHERE product_id = $1' , [product_id]);//featureden de siler
-        return res.status(200).send('product deleted successfully');
+        return res.status(200).send({message:'product deleted successfully',adminToken});
         
     } catch (error) {
         console.error(error);
@@ -178,7 +185,7 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
 
 adminRouter.put('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {// ürünün genel özelliklerini günceller
     const {product_id} = req.params;
-
+    const{adminToken}=req;
     const { product_name,
         category_id,
         price,
@@ -200,7 +207,7 @@ adminRouter.put('/patch-a-product/:product_id' , adminTokenValidator , async (re
     await pool.query('UPDATE products SET product_name = $1, category_id = $2, price = $3,  pattern = $4, description = $5,discount=$7 ,isProductOfTheWeek=$8 WHERE product_id = $6' , 
     [ product_name, category_id, price,  pattern, description, product_id,discount,productOfTheWeek]);
 
-    return res.status(200).json({message: 'Product updated successfully'});
+    return res.status(200).json({message: 'Product updated successfully',adminToken});
 });
 
 
@@ -346,7 +353,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//�
 
                   
         console.log(productsWithUrls);
-         return res.status(200).json({productDetails:productsWithUrls})
+         return res.status(200).json({productDetails:productsWithUrls,adminToken})
         
 
         
@@ -398,7 +405,35 @@ adminRouter.put('/update-product/:product_id:/feature_id', adminTokenValidator, 
     }
 });
 
+adminRouter.get('/fetchCustomers',adminTokenValidator,async(req,res)=>{
+    try {
+        const{adminToken}=req;
+        const customers=await pool.query('SELECT * FROM customers');
+        return res.status(200).json({
+            data:customers.rows,
+            adminToken
+        });
 
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
+
+adminRouter.delete('/delete-customer/:customer_id',adminTokenValidator,async(req,res)=>{
+    try {
+        const{adminToken}=req;
+        const{customer_id}=req.params;
+        await pool.query('DELETE FROM customers WHERE customer_id=$1',[customer_id]);
+        return res.status(200).json({
+            adminToken,
+            message:'Müşteri Başarıyla Silindi'
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+})
 
 
 

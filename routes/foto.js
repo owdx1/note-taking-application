@@ -3,6 +3,7 @@ const photoRouter = require('express').Router();
 const express = require('express');
 const multer = require('multer');
 const minioClient=require('../minio');
+const adminTokenValidator = require('../middlewares/adminTokenValidator');
 
 
 
@@ -12,9 +13,9 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Handle file upload
-photoRouter.post('/file', upload.single('file'), (req, res) => {
+photoRouter.post('/file' ,upload.single('file'), (req, res) => {
   const file = req.file;
-
+const adminToken=req;
   if (!file) {
     return res.status(400).send('No file uploaded.');
   }
@@ -29,7 +30,7 @@ photoRouter.post('/file', upload.single('file'), (req, res) => {
     }
 
     console.log('File uploaded to Minio:', etag);
-    return res.status(200).send('File uploaded successfully.');
+    return res.status(200).send({message:'File uploaded successfully.'});
   });
 });
 
