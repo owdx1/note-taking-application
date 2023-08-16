@@ -15,10 +15,10 @@ const adminTokenValidator = (req, res, next) => {
             const statusCode = err.name === 'TokenExpiredError' ? 401 : 400;
             return res.status(statusCode).json({ err });
         }
-
+        
         console.log("HERE IS THE admin AFTER JWT VERIFY" , admin); // bu silinecek
-
-        req.admin = admin; // token geçerli ise, kullanıcının tüm bilgilerini req.admine'e yolluyoruz
+        
+        req.admin = token; // token geçerli ise, kullanıcının tüm bilgilerini req.admine'e yolluyoruz
         next();
     });
 }
