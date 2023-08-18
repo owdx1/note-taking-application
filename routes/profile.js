@@ -127,22 +127,19 @@ profileRouter.post('/cart/delete-a-product',accessTokenValidator,refreshTokenVal
 
 
 
-profileRouter.post('/cart/buy',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
-    const {customer}=req;
-    const {accessToken} = req;
-    const customer_id=customer.id;
-    const orderId= await getNewOrderId(customer_id);
-
-    // burası eklendi
-    const {totalPrice} = req.body;
-    // burası eklendi
-    console.log(totalPrice);
-
-
-    await pool.query('UPDATE orders SET isOrdered=true WHERE order_id=$1',[orderId]);
-    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)',[customer_id, totalPrice]); // çalışıyor mu test edilmesi gerekli
-    return res.status(200).json({message:"Satın alındı!!!",accessToken:accessToken});
-});
+profileRouter.post('/cart/buy', accessTokenValidator, refreshTokenValidator, async (req, res) => {
+    const { customer } = req;
+    const { accessToken } = req;
+    const customer_id = customer.id;
+    const orderId = await getNewOrderId(customer_id);
+  
+    const { totalPrice } = req.body; 
+    console.log('totalprice',totalPrice);
+    await pool.query('UPDATE orders SET isOrdered=true,total_amount=$2 WHERE order_id=$1', [orderId,totalPrice]);
+    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)', [customer_id, totalPrice]); 
+    return res.status(200).json({ message: "Satın alındı!!!", accessToken });
+  });
+  
 
 
 profileRouter.get('/orders'  ,accessTokenValidator, refreshTokenValidator, async (req , res) => {
@@ -169,7 +166,7 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
         const {customer} = req;
         const{order_id}=req.params;
         const {accessToken} = req;
-        const data=await pool.query('SELECT distinct I.*,S.size,C.color FROM orders o,order_items I, products P,feature F ,colors C, sizes S WHERE o.customer_id=$2 AND o.isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id and C.color_id=F.color_id AND F.size_id=S.size_id',[1,customer.id]);
+        const data=await pool.query('SELECT distinct I.*,S.size,C.color FROM orders o,order_items I, products P,feature F ,colors C, sizes S WHERE o.customer_id=$2 AND o.isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id and C.color_id=F.color_id AND F.size_id=S.size_id and I.size=S.size and I.color=C.color',[order_id,customer.id]);
         //console.log('data',data.rows);
         
         const dataObject = data.rows;

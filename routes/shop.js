@@ -98,7 +98,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
             //const oldPrice = parseFloat(oldPriceResult.rows[0].price);
             newQuantity=oldQuantity+quantity;
             newPrice = totalAmount+oldPrice;
-            const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size=$5,color=$6",[newQuantity,newPrice,product_id,newOrderId,size,color]);
+            const updateQuery=await pool.query("UPDATE order_items SET quantity=$1,price=$2 where product_id=$3 and order_id=$4 and size=$5 and color=$6",[newQuantity,newPrice,product_id,newOrderId,size,color]);
         
 
 

@@ -365,6 +365,39 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//�
     }
     
 });
+
+adminRouter.get('/fetchCustomers',adminTokenValidator,async(req,res)=>{
+    try {
+        const adminToken=req.admin;
+        const customers=await pool.query('SELECT * FROM customers');
+        return res.status(200).json({
+            data:customers.rows,
+            adminToken
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
+
+adminRouter.delete('/delete-customer/:customer_id',adminTokenValidator,async(req,res)=>{
+    try {
+        const adminToken=req.admin;
+        const{customer_id}=req.params;
+        await pool.query('DELETE FROM customers WHERE customer_id=$1',[customer_id]);
+        return res.status(200).json({
+            adminToken,
+            message:'Müşteri Başarıyla Silindi'
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
+
+
+
 // genel ürün güncelleme
 adminRouter.put('/update-product/:product_id:/feature_id', adminTokenValidator, async (req, res) => {
     try {
@@ -406,35 +439,7 @@ adminRouter.put('/update-product/:product_id:/feature_id', adminTokenValidator, 
     }
 });
 
-adminRouter.get('/fetchCustomers',adminTokenValidator,async(req,res)=>{
-    try {
-        const adminToken=req.admin;
-        const customers=await pool.query('SELECT * FROM customers');
-        return res.status(200).json({
-            data:customers.rows,
-            adminToken
-        });
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server Error');
-    }
-});
-
-adminRouter.delete('/delete-customer/:customer_id',adminTokenValidator,async(req,res)=>{
-    try {
-        const adminToken=req.admin;
-        const{customer_id}=req.params;
-        await pool.query('DELETE FROM customers WHERE customer_id=$1',[customer_id]);
-        return res.status(200).json({
-            adminToken,
-            message:'Müşteri Başarıyla Silindi'
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server Error');
-    }
-});
 
 //olmayan ürün için
 adminRouter.post('/add-feature',adminTokenValidator,async(req,res)=>{
@@ -460,7 +465,22 @@ adminRouter.post('/add-feature',adminTokenValidator,async(req,res)=>{
 });
 
 
+adminRouter.delete('/delete-feature/:feature_id',adminTokenValidator,async(req,res)=>{
+    try {
+        const adminToken=req.admin;
+        const feature_id=req.params;
+        await pool.query('DELETE FROM feature WHERE feature_id=$1',[feature_id]);
 
+
+        return res.status(200).json({
+            adminToken,
+            message:'ürün başarıyla silindi'
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
 
 
 
