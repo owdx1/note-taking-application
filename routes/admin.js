@@ -146,10 +146,11 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
 
 
 adminRouter.get('/products/:product_id/:feature_id', adminTokenValidator , async (req, res) => {
-    const{product_id,feature_id} = req.params;
-    const adminToken=req.admin;
+    
     try {
-
+        const product_id=req.params.product_id;
+        const feature_id=req.params.feature_id;
+        const adminToken=req.admin;
         const product = await pool.query('SELECT P.*,S.size,C.color,F.quantity FROM products P,feature F ,sizes S, colors C WHERE P.product_id = $1 and P.product_id=F.product_id  And F.size_id=S.size_id and C.color_id=F.color_id and F.feature_id=$2' , [product_id,feature_id]);
         const productDetails=product.rows;
         return res.status(200).json({productDetails,adminToken});
@@ -163,10 +164,10 @@ adminRouter.get('/products/:product_id/:feature_id', adminTokenValidator , async
 
 adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async (req, res) => {
 
-    const {product_id} = req.params;
-    const adminToken=req.admin;
+    
     try {
-
+        const product_id = req.params.product_id;
+        const adminToken=req.admin;
         const product = await pool.query('SELECT * FROM products WHERE product_id = $1', [product_id]);
 
         if (product.rows.length === 0) {
@@ -184,9 +185,10 @@ adminRouter.delete('/delete-a-product/:product_id' , adminTokenValidator,  async
 })
 
 adminRouter.put('/patch-a-product/:product_id' , adminTokenValidator , async (req , res) => {// ürünün genel özelliklerini günceller
-    const {product_id} = req.params;
-    const adminToken=req.admin;
-    const { product_name,
+    try {
+        const product_id = req.params.product_id;
+        const adminToken=req.admin;
+        const { product_name,
         category_id,
         price,
         quantity,
@@ -196,7 +198,7 @@ adminRouter.put('/patch-a-product/:product_id' , adminTokenValidator , async (re
         pattern,
         description,
         productOfTheWeek 
-    } = req.body;
+        } = req.body;
 
     const product = await pool.query('SELECT * FROM products where product_id = $1' , [product_id]);
 
@@ -208,6 +210,11 @@ adminRouter.put('/patch-a-product/:product_id' , adminTokenValidator , async (re
     [ product_name, category_id, price,  pattern, description, product_id,discount,productOfTheWeek]);
 
     return res.status(200).json({message: 'Product updated successfully',adminToken});
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    
+    }
 });
 
 
@@ -231,7 +238,7 @@ adminRouter.post('/acceptOrders:order_id',adminTokenValidator,async(req,res)=>{
 
     try {
         const adminToken=req.admin;
-        const{order_id}=req.params;
+        constorder_id=req.params.order_id;
         const{acceptButton,feature_id,quantity}=req.body;
         if(acceptButton===true){
             await pool.query('UPDATE orders SET isAccepted=true Where order_id=$1',[order_id]);
@@ -272,7 +279,7 @@ adminRouter.post('/acceptOrders:order_id',adminTokenValidator,async(req,res)=>{
 adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
 
     try {
-        const{order_id}=req.params;
+        const order_id=req.params.order_id;
         const adminToken=req.admin;
         const orderFeature=await pool.query('select * from orders o,order_items I where o.order_id=I.order_id and isOrdered=true and o.order_id=$1;',[order_id]);
         return res.status(200).json({orderFeature:orderFeature.rows,adminToken:adminToken});
@@ -289,7 +296,7 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
 adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
     try {
         const adminToken=req.admin;
-        const{product_id}=req.params;
+        const product_id=req.params.product_id;
         const rawData = await pool.query('SELECT * FROM products P,feature F, colors C,sizes S WHERE P.product_id=$1 AND F.product_id=P.product_id and C.color_id=F.color_id and S.size_id=F.size_id',[product_id]);
         let data=rawData.rows;
         const productQuantity=data.quantity;
@@ -384,7 +391,7 @@ adminRouter.get('/fetchCustomers',adminTokenValidator,async(req,res)=>{
 adminRouter.delete('/delete-customer/:customer_id',adminTokenValidator,async(req,res)=>{
     try {
         const adminToken=req.admin;
-        const{customer_id}=req.params;
+        const customer_id=req.params.customer_id;
         await pool.query('DELETE FROM customers WHERE customer_id=$1',[customer_id]);
         return res.status(200).json({
             adminToken,
@@ -399,9 +406,9 @@ adminRouter.delete('/delete-customer/:customer_id',adminTokenValidator,async(req
 
 
 // genel ürün güncelleme
-adminRouter.put('/update-product/:product_id:/feature_id', adminTokenValidator, async (req, res) => {
+adminRouter.put('/update-product/:product_id', adminTokenValidator, async (req, res) => {
     try {
-        const { product_id } = req.params;
+        const  product_id  = req.params.product_id;
         const updatedFeature = req.body; // Assuming the request body is an array of JSON objects
         const adminToken=req.admin;
         //updatedFeature : [{newSize:'XL',newQuantity:17,newColor:'mor'},{newSize:'XLL',newQuantity:11,newColor:'pembe'},{newSize:'L',newQuantity:15,newColor:'sarı'}]
@@ -468,7 +475,7 @@ adminRouter.post('/add-feature',adminTokenValidator,async(req,res)=>{
 adminRouter.delete('/delete-feature/:feature_id',adminTokenValidator,async(req,res)=>{
     try {
         const adminToken=req.admin;
-        const feature_id=req.params;
+        const feature_id=req.params.feature_id;
         await pool.query('DELETE FROM feature WHERE feature_id=$1',[feature_id]);
 
 

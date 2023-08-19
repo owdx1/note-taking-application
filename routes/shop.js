@@ -128,7 +128,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
 shopRouter.delete('/delete-product/:product_id',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
         const{customer}=req;
-        const{product_id}=req.params;
+        const product_id=req.params.product_id;
         const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişi listeler(son siparis id)
 
@@ -148,7 +148,7 @@ shopRouter.delete('/delete-product/:product_id',accessTokenValidator,refreshToke
 shopRouter.put('/update-quantity/:product_id',accessTokenValidator,refreshTokenValidator,async(req,res)=>{
     try {
         const{customer}=req;
-        const{product_id}=req.params;
+        const product_id=req.params.product_id;
         const {quantity}=req.body;
         const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişi listeler
@@ -236,7 +236,7 @@ shopRouter.get('/', async (req, res) => {
 
 shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tıklayınca gelen ürün dataları
     try {
-        const{product_id}=req.params;
+        const product_id=req.params.product_id;
         const rawData = await pool.query('SELECT * FROM products P,feature F, colors C,sizes S WHERE P.product_id=$1 AND F.product_id=P.product_id and C.color_id=F.color_id and S.size_id=F.size_id',[product_id]);
         let data=rawData.rows;
         const productQuantity=data.quantity;

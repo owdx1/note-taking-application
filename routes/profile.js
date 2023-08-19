@@ -164,7 +164,7 @@ profileRouter.get('/orders'  ,accessTokenValidator, refreshTokenValidator, async
 profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator,async(req,res)=>{//spesifik siparişin içeriğini gösterir
     try {
         const {customer} = req;
-        const{order_id}=req.params;
+        const order_id=req.params.order_id;
         const {accessToken} = req;
         const data=await pool.query('SELECT distinct I.*,S.size,C.color FROM orders o,order_items I, products P,feature F ,colors C, sizes S WHERE o.customer_id=$2 AND o.isOrdered=true AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id and C.color_id=F.color_id AND F.size_id=S.size_id and I.size=S.size and I.color=C.color',[order_id,customer.id]);
         //console.log('data',data.rows);
