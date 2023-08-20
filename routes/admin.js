@@ -226,7 +226,7 @@ adminRouter.get('/getOrders',adminTokenValidator,async(req,res)=>{
     try {
         const adminToken=req.admin;
         
-        await pool.query('SELECT * from orders where  isOrdered=true and isAccepted=false');//!! and isAccepted=false;
+        await pool.query('SELECT * from orders where  orderStatus=1');//!! and isAccepted=false;
         return res.status(200).json({adminToken:adminToken});
 
     } catch (error) {
@@ -241,7 +241,7 @@ adminRouter.post('/acceptOrders:order_id',adminTokenValidator,async(req,res)=>{
         constorder_id=req.params.order_id;
         const{acceptButton,feature_id,quantity}=req.body;
         if(acceptButton===true){
-            await pool.query('UPDATE orders SET isAccepted=true Where order_id=$1',[order_id]);
+            await pool.query('UPDATE orders SET orderStatus=2 Where order_id=$1',[order_id]);
             //!await pool.query('UPDATE orders SET isAccepted=false WHERE order_id=$1',[order_id]);
 
             for (const stock of availableStock) {
@@ -281,7 +281,7 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
     try {
         const order_id=req.params.order_id;
         const adminToken=req.admin;
-        const orderFeature=await pool.query('select * from orders o,order_items I where o.order_id=I.order_id and isOrdered=true and o.order_id=$1;',[order_id]);
+        const orderFeature=await pool.query('select * from orders o,order_items I where o.order_id=I.order_id  and o.order_id=$1;',[order_id]);
         return res.status(200).json({orderFeature:orderFeature.rows,adminToken:adminToken});
 
     } catch (error) {

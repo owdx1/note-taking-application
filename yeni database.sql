@@ -39,6 +39,7 @@ CREATE TABLE orders (
     total_amount DECIMAL(10, 2),
     isOrdered boolean DEFAULT false,
     isAccepted boolean DEFAULT false,
+    orderStatus integer DEFAULT 0,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
