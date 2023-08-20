@@ -12,7 +12,16 @@ const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
 const minioClient=require('../minio');
 
+const categories = {
 
+    1:'takim',
+    
+    2:'tek-ust',
+    3:'tek-alt',
+    4:'tesettur',
+    5:'bone',
+    6:'terlik',
+  };
 
 const profileRouter = require('express').Router();
 
@@ -176,14 +185,15 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
         async function generatePreSignedUrls() {
           for (const d of dataObject) {
             const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
-            const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+            const bucketName= categories[d.category_id];
+            const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
         
             const productUrls = [];
         
             await new Promise((resolve, reject) => {
               listStream.on('data', async (obj) => {
                 try {
-                  const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+                  const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
                   const photoData = {
                     url: photoUrlMinio,
                   };

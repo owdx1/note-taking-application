@@ -6,7 +6,17 @@ const pool = require('../db');
 const minioClient=require('../minio');
 
 
+const categories = {
 
+    1:'takim',
+    
+    2:'tek-ust',
+    3:'tek-alt',
+    4:'tesettur',
+    5:'bone',
+    6:'terlik',
+  };
+  
 
 
 
@@ -94,14 +104,15 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
         async function generatePreSignedUrls() {
           for (const d of products) {
             const productPhoto = `${d.category_id}-${d.product_name}`;
-            const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+            const bucketName= categories[d.category_id];
+            const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
         
             const productUrls = [];
         
             await new Promise((resolve, reject) => {
               listStream.on('data', async (obj) => {
                 try {
-                  const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+                  const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
                   const photoData = {
                     url: photoUrlMinio,
                   };
@@ -308,8 +319,8 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
       for (const d of data) {
         const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
         //console.log(productPhoto);
-
-        const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+        const bucketName= categories[d.category_id];
+        const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
 
         const productUrls = [];
 
@@ -317,7 +328,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
           listStream.on('data', async (obj) => {
             try {
               
-              const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+              const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
 
               // Customize the data associated with each photo URL
               const photoData = {

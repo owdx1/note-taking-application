@@ -12,7 +12,16 @@ const minioClient=require('../minio');
 const accessTokenValidator = require('../middlewares/accessTokenValidator');
 const refreshTokenValidator = require('../middlewares/refreshTokenValidator');
 
+const categories = {
 
+  1:'takim',
+  
+  2:'tek-ust',
+  3:'tek-alt',
+  4:'tesettur',
+  5:'bone',
+  6:'terlik',
+};
 
 
 const bucketName = 'ecommerce';
@@ -25,7 +34,7 @@ async function getBasketItemCount(customerId) {
   
     try {
 
-      const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customerId]);
+      const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and orderStatus=0' , [customerId]);
     const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
 
     const productNumResult = await pool.query("SELECT SUM(quantity) FROM order_items WHERE order_id = $1", [newOrderId]);
@@ -63,7 +72,7 @@ shopRouter.post('/add-basket',accessTokenValidator,refreshTokenValidator,async(r
         
         
 
-          const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [id]);
+          const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and orderStatus=0' , [id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişin idsi
          
 
@@ -129,7 +138,7 @@ shopRouter.delete('/delete-product/:product_id',accessTokenValidator,refreshToke
     try {
         const{customer}=req;
         const product_id=req.params.product_id;
-        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
+        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and orderStatus=0' , [customer.id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişi listeler(son siparis id)
 
           const avilableProduct=await pool.query("Select * from order_items where order_id=$2 and product_id=$1",[product_id,newOrderId]);
@@ -150,7 +159,7 @@ shopRouter.put('/update-quantity/:product_id',accessTokenValidator,refreshTokenV
         const{customer}=req;
         const product_id=req.params.product_id;
         const {quantity}=req.body;
-        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and isOrdered=false' , [customer.id]);
+        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and orderStatus=0' , [customer.id]);
           const newOrderId = newestOrder.rows[0].order_id;//en son siparişi listeler
 
           const avilableProduct=await pool.query("SELECT * from order_items I, products P,feature F where product_id=$1 AND order_id=$2 AND I.product_id=P.product_id AND P.product_id=F.product_id  ",[product_id,newOrderId]);
@@ -182,15 +191,16 @@ shopRouter.get('/', async (req, res) => {
       for (const d of data) {
         const productPhoto = `${d.category_id}-${d.product_name}`;
         //console.log(productPhoto);
+        const bucketName= categories[d.category_id];
 
-        const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+        const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
 
         const productUrls = [];
 
         await new Promise((resolve, reject) => {
           listStream.on('data', async (obj) => {
             try {
-              const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+              const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
 
               // Customize the data associated with each photo URL
               const photoData = {
@@ -224,7 +234,7 @@ shopRouter.get('/', async (req, res) => {
       photoUrls: preSignedUrlsArray[index],
     }));
 
-    //console.log(productsWithUrls);
+    console.log(productsWithUrls);
     return res.status(200).json({ data: productsWithUrls });
   } catch (error) {
     console.error(error);
@@ -248,8 +258,8 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
       for (const d of data) {
         const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
         //console.log(productPhoto);
-
-        const listStream = minioClient.listObjectsV2('ecommerce', productPhoto, true);
+        const bucketName= categories[d.category_id];
+        const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
 
         const productUrls = [];
 
@@ -257,7 +267,7 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
           listStream.on('data', async (obj) => {
             try {
               
-              const photoUrlMinio = await minioClient.presignedGetObject('ecommerce', obj.name, 3600);
+              const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
 
               // Customize the data associated with each photo URL
               const photoData = {
