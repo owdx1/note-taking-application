@@ -237,8 +237,8 @@ adminRouter.get('/getOrders',adminTokenValidator,async(req,res)=>{
     try {
         const adminToken=req.admin;
         
-        await pool.query('SELECT * from orders where  orderStatus>0');//!! and isAccepted=false;
-        return res.status(200).json({adminToken:adminToken});
+        const orderResult=await pool.query('SELECT * from orders where  orderStatus>0');//!! and isAccepted=false;
+        return res.status(200).json({orders:orderResult.rows,adminToken:adminToken});
 
     } catch (error) {
         console.error(error);
