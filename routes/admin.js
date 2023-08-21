@@ -237,44 +237,10 @@ adminRouter.get('/getOrders',adminTokenValidator,async(req,res)=>{
     try {
         const adminToken=req.admin;
         
-        await pool.query('SELECT * from orders where  orderStatus=1');//!! and isAccepted=false;
+        await pool.query('SELECT * from orders where  orderStatus>0');//!! and isAccepted=false;
         return res.status(200).json({adminToken:adminToken});
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).send('Server error');
-    }
-});
-adminRouter.post('/acceptOrders:order_id',adminTokenValidator,async(req,res)=>{
-
-    try {
-        const adminToken=req.admin;
-        constorder_id=req.params.order_id;
-        const{acceptButton,feature_id,quantity}=req.body;
-        if(acceptButton===true){
-            await pool.query('UPDATE orders SET orderStatus=2 Where order_id=$1',[order_id]);
-            //!await pool.query('UPDATE orders SET isAccepted=false WHERE order_id=$1',[order_id]);
-
-            for (const stock of availableStock) {
-                const feature_id = stock.feature_id;
-                const quantity = stock.quantity;
-                const product_id=stock.product_id;
-                const result = await pool.query('SELECT quantity from feature  where feature_id = $1', [feature_id]);
-                const numberOfBestSellerResult=await pool.query('SELECT bestSeller from products WHERE product_id=$1',[product_id]);
-                const numberOBS=numberOfBestSellerResult.rows[0].bestSeller;
-
-                const availableStock = result.rows[0].quantity;
-              
-                
-                const setquantity = availableStock - quantity;
-                 const newNumberOBS=numberOBS+quantity;
-                await pool.query('UPDATE products SET bestSeller=$1 WHERE product_id=$2',[newNumberOBS,product_id]);
-                await pool.query('UPDATE feature SET quantity = $1 WHERE feature_id = $2', [setquantity, feature_id]);
-            }}
-        return res.status(200).json({adminToken:adminToken,message:"Sipariş onaylandı, stok güncellendi"});
-
-    }
-     catch (error) {
         console.error(error);
         return res.status(500).send('Server error');
     }
@@ -293,6 +259,7 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
         const order_id=req.params.order_id;
         const adminToken=req.admin;
         const orderFeature=await pool.query('select * from orders o,order_items I where o.order_id=I.order_id  and o.order_id=$1;',[order_id]);
+        console.log(orderFeature.rows);
         return res.status(200).json({orderFeature:orderFeature.rows,adminToken:adminToken});
 
     } catch (error) {
@@ -300,6 +267,36 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
         return res.status(500).send('Server error');
     }
 });
+
+
+adminRouter.put('/getOrders/:order_id/:newStatus',adminTokenValidator,async(req,res)=>{
+
+    try {
+        const order_id=req.params.order_id;
+        const newStatus=req.params.newStatus;
+        const adminToken=req.admin;
+        const updatedStatus=await pool.query('UPDATE orders SET orderStatus=$1 WHERE order_id=$2',[newStatus,order_id]);
+        console.log(updatedStatus.rows);
+        
+        if(newStatus===3){
+            const products =await pool.query('select I.* from orders O, order_items I where O.order_id=I.order_id and I.order_id=$1',[order_id]);
+            for(let stock of products.rows){
+                const newProduct_id=stock.product_id;
+                const newColor=stock.color;
+                const newSize=stock.size;
+                const newQuantity=stock.quantity;
+                await pool.query('UPDATE feature SET quantity=quantity-$1 WHERE product_id=$2 and color_id=(select color_id from colors WHERE color=$3) and size_id=(select size_id from sizes WHERE size=$4)',[newQuantity,newProduct_id,newColor,newSize]);
+            }
+        }
+        return res.status(200).json({message:'Sipariş Durumu değiştirildi',adminToken:adminToken});
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server error');
+    }
+});
+
+
 
 
 //genel ürün  ve alt dalı

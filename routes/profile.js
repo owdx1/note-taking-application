@@ -157,7 +157,7 @@ profileRouter.get('/orders'  ,accessTokenValidator, refreshTokenValidator, async
         const {customer} = req;
         const {accessToken} = req;
         
-        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and orderStatus=1 ' , [customer.id]);
+        const newestOrder = await pool.query('SELECT * FROM orders  WHERE customer_id=$1 and orderStatus>0 ' , [customer.id]);
         //const orderIds = newestOrder.rows.map((order) => order.order_id);
         const oldOrders=newestOrder.rows;
         console.log('yolladıgım siparisler' , oldOrders);
@@ -175,17 +175,19 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
         const {customer} = req;
         const order_id=req.params.order_id;
         const {accessToken} = req;
-        const data=await pool.query('SELECT distinct I.*,S.size,C.color FROM orders o,order_items I, products P,feature F ,colors C, sizes S WHERE o.customer_id=$2 AND orderStatus=1 AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id and C.color_id=F.color_id AND F.size_id=S.size_id and I.size=S.size and I.color=C.color',[order_id,customer.id]);
+        const data=await pool.query('SELECT distinct I.*,P.product_name,P.category_id FROM orders o,order_items I, products P,feature F ,colors C, sizes S WHERE o.customer_id=$2 AND orderStatus>0 AND o.order_id=$1 AND o.order_id=I.order_id AND   P.product_id=F.product_id AND P.product_id=I.product_id and C.color_id=F.color_id AND F.size_id=S.size_id and I.size=S.size and I.color=C.color',[order_id,customer.id]);
         //console.log('data',data.rows);
         
         const dataObject = data.rows;
-        //console.log(dataObject);
+        console.log(dataObject);
         const preSignedUrlsArray = [];
         
         async function generatePreSignedUrls() {
           for (const d of dataObject) {
             const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
             const bucketName= categories[d.category_id];
+            //console.log(d.category_id);
+            //console.log(bucketName);
             const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
         
             const productUrls = [];
