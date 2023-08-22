@@ -258,9 +258,69 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
     try {
         const order_id=req.params.order_id;
         const adminToken=req.admin;
-        const orderFeature=await pool.query('select * from orders o,order_items I where o.order_id=I.order_id  and o.order_id=$1;',[order_id]);
-        console.log(orderFeature.rows);
-        return res.status(200).json({orderFeature:orderFeature.rows,adminToken:adminToken});
+        const orderFeature=await pool.query('select o.*,I.*,P.product_name,P.category_id from orders o,order_items I,products P where o.order_id=I.order_id  and o.order_id=$1 and I.product_id=P.product_id',[order_id]);
+       // console.log(orderFeature.rows);
+
+
+
+
+
+        const products  = orderFeature.rows;
+
+        
+        const preSignedUrlsArray = [];
+        
+        async function generatePreSignedUrls() {
+          for (const d of products) {
+            const productPhoto = `${d.category_id}-${d.product_name}`;
+            const bucketName= categories[d.category_id];
+            console.log(bucketName);
+            console.log(d.category_id);
+            const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
+        
+            const productUrls = [];
+        
+            await new Promise((resolve, reject) => {
+              listStream.on('data', async (obj) => {
+                try {
+                  const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
+                  const photoData = {
+                    url: photoUrlMinio,
+                  };
+                  productUrls.push(photoData);
+                } catch (error) {
+                  console.error('Error generating pre-signed URL:', error);
+                }
+              });
+        
+              listStream.on('end', () => {
+                preSignedUrlsArray.push(productUrls);
+                resolve();
+              });
+        
+              listStream.on('error', (err) => {
+                reject(err);
+              });
+            });
+          }
+        }
+        
+        await generatePreSignedUrls();
+        
+        const productsWithUrls = products.map((item, index) => ({
+          ...item,
+          photoUrls: preSignedUrlsArray[index],
+        }));
+        
+        console.log(productsWithUrls);
+
+
+
+
+
+
+
+        return res.status(200).json({orderFeature:productsWithUrls,adminToken:adminToken});
 
     } catch (error) {
         console.error(error);
