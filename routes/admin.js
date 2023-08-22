@@ -258,7 +258,7 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
     try {
         const order_id=req.params.order_id;
         const adminToken=req.admin;
-        const orderFeature=await pool.query('select o.*,I.*,P.product_name,P.category_id from orders o,order_items I,products P where o.order_id=I.order_id  and o.order_id=$1 and I.product_id=P.product_id',[order_id]);
+        const orderFeature=await pool.query('select o.*,I.*,P.product_name,P.category_id,C.first_name,C.last_name,C.email,C.address,C.city,C.postal_code,C.country,C.phone  from orders o,order_items I,products P ,customers C where o.order_id=I.order_id  and o.order_id=$1 and I.product_id=P.product_id and C.customer_id=o.customer_id',[order_id]);
        // console.log(orderFeature.rows);
 
 
