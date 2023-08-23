@@ -335,11 +335,13 @@ adminRouter.put('/getOrders/:order_id/:newStatus',adminTokenValidator,async(req,
         const order_id=req.params.order_id;
         const newStatus=req.params.newStatus;
         const adminToken=req.admin;
-        const updatedStatus=await pool.query('UPDATE orders SET orderStatus=$1 WHERE order_id=$2',[newStatus,order_id]);
-        console.log(updatedStatus.rows);
+        await pool.query('UPDATE orders SET orderStatus=$1 WHERE order_id=$2',[newStatus,order_id]);
         
-        if(newStatus===3){
+        
+        if(newStatus==3){
             const products =await pool.query('select I.* from orders O, order_items I where O.order_id=I.order_id and I.order_id=$1',[order_id]);
+            console.log(order_id);
+            console.log(products.rows);
             for(let stock of products.rows){
                 const newProduct_id=stock.product_id;
                 const newColor=stock.color;
@@ -440,6 +442,25 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//�
     }
     
 });
+
+
+adminRouter.put('/products/:product_id',adminTokenValidator,async(req,res)=>{
+    try {
+        const product_id=req.params.product_id;
+        const adminToken=req.admin;
+        const {product_name,price,discount,description,isProductOfTheWeek}=req.body;
+        await pool.query('UPDATE products SET product_name=$1,price=$2,discount=$3,description=$4,isProductOfTheWeek=$5 WHERE product_id=$6',[product_name,price,discount,description,isProductOfTheWeek,product_id]);
+        return res.status(200).json({message:'Başarıyla Güncellendi',adminToken});
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
+
+
+
+
+
 
 adminRouter.get('/fetchCustomers',adminTokenValidator,async(req,res)=>{
     try {

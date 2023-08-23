@@ -27,7 +27,7 @@ const profileRouter = require('express').Router();
 
 async function getNewOrderId(customer_id){
     try {
-        const orders = await pool.query('SELECT * FROM orders WHERE customer_id = $1 and orderStatus=0' , [customer_id]);//sepeti listeler
+        const orders = await pool.query('SELECT * FROM orders WHERE customer_id = $1 and orderStatus=0 order by order_date  desc' , [customer_id]);//sepeti listeler
         const orderId = orders.rows[0].order_id;
         return orderId;
     } catch (error) {
@@ -44,7 +44,11 @@ profileRouter.get('/' , accessTokenValidator, refreshTokenValidator , async (req
         const {id} = customer;
         const {accessToken} = req; // bunu neden aldım hatırlamıyorum
         console.log(customer); // bu silinecek
-        await pool.query("INSERT INTO orders(customer_id,total_amount) VALUES($1,$2)",[id,0]);
+        const availableCart=await pool.query('SELECT * from orders WHERE orderStatus=0 and customer_id=$1',[id]);
+        if(availableCart.rows.length===0){
+            await pool.query("INSERT INTO orders(customer_id,total_amount) VALUES($1,$2)",[id,0]);
+        }
+        
         const response = await pool.query('SELECT * FROM customers WHERE customer_id = $1' , [id]);
         const sendResponse = response.rows[0]; // burada yollanılan customerin içinde hashlı şifre de var, 
         // eğer olur da request intercept edilirse hashli şifreyi hackera vermis oluyoruz
@@ -145,7 +149,7 @@ profileRouter.post('/cart/buy', accessTokenValidator, refreshTokenValidator, asy
     const { totalPrice } = req.body; 
     console.log('totalprice',totalPrice);
     await pool.query('UPDATE orders SET orderStatus=1,total_amount=$2 WHERE order_id=$1', [orderId,totalPrice]);
-    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)', [customer_id, totalPrice]); 
+    await pool.query('insert into orders(customer_id,total_amount) values($1,$2)', [customer_id, 0]); 
     return res.status(200).json({ message: "Satın alındı!!!", accessToken });
   });
   
