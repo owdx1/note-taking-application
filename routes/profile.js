@@ -75,12 +75,64 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
         const {accessToken} = req;
 
         const orderId= await getNewOrderId(customer_id);
+        //console.log(orderId);
         //const basket=await pool.query("SELECT * FROM order_items WHERE order_id=$1",[orderId]);// sepettekiürünler
-        const basket=await pool.query("select *,f.quantity as totalquantity,o.quantity as orderquantity  from products p,order_items o,feature f ,sizes s, colors c where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and c.color_id=f.color_id and f.size_id=s.size_id and o.size=s.size and o.color=c.color",[orderId]);
+        const basket=await pool.query("select *,f.quantity as totalquantity,o.quantity as orderquantity,o.color as ocolor  from products p,order_items o,feature f ,sizes s, colors c where p.product_id=o.product_id and p.product_id=f.product_id and order_id=$1  and c.color_id=f.color_id and f.size_id=s.size_id and o.size=s.size and o.color=c.color",[orderId]);
 
-        //!!!!! * 'ı elemen gerek sonradan
 
-        return res.status(200).json({customer , basket:basket.rows , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
+
+        const dataObject = basket.rows;
+        //console.log(dataObject);
+        const preSignedUrlsArray = [];
+        
+        async function generatePreSignedUrls() {
+          for (const d of dataObject) {
+            const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
+            const bucketName= categories[d.category_id];
+            //console.log(d.category_id);
+            //console.log(bucketName);
+            const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
+        
+            const productUrls = [];
+        
+            await new Promise((resolve, reject) => {
+              listStream.on('data', async (obj) => {
+                try {
+                  const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
+                  const photoData = {
+                    url: photoUrlMinio,
+                  };
+                  productUrls.push(photoData);
+                } catch (error) {
+                  console.error('Error generating pre-signed URL:', error);
+                }
+              });
+        
+              listStream.on('end', () => {
+                preSignedUrlsArray.push(productUrls);
+                resolve();
+              });
+        
+              listStream.on('error', (err) => {
+                reject(err);
+              });
+            });
+          }
+        }
+        
+        await generatePreSignedUrls();
+        
+        const productsWithUrls = dataObject.map((item, index) => ({
+          ...item,
+          photoUrls: preSignedUrlsArray[index],
+        }));
+        
+       // console.log(productsWithUrls);
+
+
+
+
+        return res.status(200).json({customer , basket:productsWithUrls , accessToken:accessToken}); // bunu bu şekilde kullanmak kafa karışıklığına yol açabilir ama düzeltiriz
 
         
     } catch (error) {
