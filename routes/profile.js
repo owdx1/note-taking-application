@@ -101,6 +101,7 @@ profileRouter.get('/cart' , accessTokenValidator , refreshTokenValidator , async
                   const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
                   const photoData = {
                     url: photoUrlMinio,
+                    name:obj.name,
                   };
                   productUrls.push(photoData);
                 } catch (error) {
@@ -254,6 +255,7 @@ profileRouter.get('/orders/:order_id',accessTokenValidator,refreshTokenValidator
                   const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
                   const photoData = {
                     url: photoUrlMinio,
+                    name:obj.name,
                   };
                   productUrls.push(photoData);
                 } catch (error) {

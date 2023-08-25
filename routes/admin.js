@@ -115,6 +115,7 @@ adminRouter.get('/dashboard' , adminTokenValidator , async (req , res) => {
                   const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
                   const photoData = {
                     url: photoUrlMinio,
+                    name:obj.name,
                   };
                   productUrls.push(photoData);
                 } catch (error) {
@@ -286,6 +287,7 @@ adminRouter.get('/getOrders/:order_id',adminTokenValidator,async(req,res)=>{
                   const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
                   const photoData = {
                     url: photoUrlMinio,
+                    name:obj.name,
                   };
                   productUrls.push(photoData);
                 } catch (error) {
@@ -371,8 +373,8 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
         let data=rawData.rows;
         const productQuantity=data.quantity;
 
-
-        const preSignedUrlsArray = [];
+        const prePhotoName=[];
+        
 
     async function generatePreSignedUrls() {
       for (const d of data) {
@@ -382,21 +384,22 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
         const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
 
         const productUrls = [];
-
+       
         await new Promise((resolve, reject) => {
           listStream.on('data', async (obj) => {
             try {
               
               const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
-
+                console.log('obje adÄ± ::', obj);
               // Customize the data associated with each photo URL
               const photoData = {
                 url: photoUrlMinio,
+                name:obj.name,
                 //description: 'Description of the photo',
                 //otherData: 'Other data related to the photo',
               };
-
-              productUrls.push(photoData);
+              photoN.push(obj.data);
+             
             } catch (error) {
               console.error('Error generating pre-signed URL:', error);
             }
@@ -404,6 +407,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
 
           listStream.on('end', () => {
             preSignedUrlsArray.push(productUrls);
+            
             resolve(); // Resolve the promise when the stream ends
           });
 
@@ -419,6 +423,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
     const productsWithUrls = data.map((item, index) => ({
       ...item,
       photoUrls: preSignedUrlsArray[index],
+
     }));
 
         
@@ -579,7 +584,24 @@ adminRouter.delete('/delete-feature/:feature_id',adminTokenValidator,async(req,r
 });
 
 
+adminRouter.delete('/delete-photo',adminTokenValidator,async(req,res)=>{
+    try {
+        const adminToken=req.admin;
+        const{category_id,photoName}=req.body;
+        //const productPhoto = `${category_id}-${product_name}-${color}`;
+        const bucketName= categories[category_id];
 
+        await minioClient.removeObject(bucketName, photoName);
+
+        return res.status(200).json({
+            adminToken,
+            message:'Resim baÅŸarÄ±yla silindi'
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Server Error');
+    }
+});
 
 
 

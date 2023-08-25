@@ -186,6 +186,7 @@ shopRouter.get('/', async (req, res) => {
     const data = rawData.rows;
 
     const preSignedUrlsArray = [];
+    
 
     async function generatePreSignedUrls() {
       for (const d of data) {
@@ -196,7 +197,7 @@ shopRouter.get('/', async (req, res) => {
         const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
 
         const productUrls = [];
-
+        
         await new Promise((resolve, reject) => {
           listStream.on('data', async (obj) => {
             try {
@@ -205,11 +206,14 @@ shopRouter.get('/', async (req, res) => {
               // Customize the data associated with each photo URL
               const photoData = {
                 url: photoUrlMinio,
+                name:obj.name,
+                name:obj.name,
                 //description: 'Description of the photo',
                 //otherData: 'Other data related to the photo',
               };
 
               productUrls.push(photoData);
+              
             } catch (error) {
               console.error('Error generating pre-signed URL:', error);
             }
@@ -217,6 +221,8 @@ shopRouter.get('/', async (req, res) => {
 
           listStream.on('end', () => {
             preSignedUrlsArray.push(productUrls);
+           
+
             resolve(); // Resolve the promise when the stream ends
           });
 
@@ -232,6 +238,7 @@ shopRouter.get('/', async (req, res) => {
     const productsWithUrls = data.map((item, index) => ({
       ...item,
       photoUrls: preSignedUrlsArray[index],
+      
     }));
 
     console.log(productsWithUrls);
@@ -272,6 +279,7 @@ shopRouter.get('/products/:product_id',async(req,res)=>{//ürünün üzerine tı
               // Customize the data associated with each photo URL
               const photoData = {
                 url: photoUrlMinio,
+                name:obj.name,
                 //description: 'Description of the photo',
                 //otherData: 'Other data related to the photo',
               };
