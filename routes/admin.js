@@ -373,7 +373,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
         let data=rawData.rows;
         const productQuantity=data.quantity;
 
-        const prePhotoName=[];
+        const preSignedUrlsArray=[];
         
 
     async function generatePreSignedUrls() {
