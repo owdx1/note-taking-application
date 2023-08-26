@@ -371,7 +371,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
         const product_id=req.params.product_id;
         const rawData = await pool.query('SELECT * FROM products P,feature F, colors C,sizes S WHERE P.product_id=$1 AND F.product_id=P.product_id and C.color_id=F.color_id and S.size_id=F.size_id',[product_id]);
         let data=rawData.rows;
-        const productQuantity=data.quantity;
+        
 
         const preSignedUrlsArray=[];
         
@@ -379,7 +379,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
     async function generatePreSignedUrls() {
       for (const d of data) {
         const productPhoto = `${d.category_id}-${d.product_name}-${d.color}`;
-        //console.log(productPhoto);
+        console.log(productPhoto);
         const bucketName= categories[d.category_id];
         const listStream = minioClient.listObjectsV2(bucketName, productPhoto, true);
 
@@ -390,7 +390,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
             try {
               
               const photoUrlMinio = await minioClient.presignedGetObject(bucketName, obj.name, 3600);
-                console.log('obje adÄ± ::', obj);
+                
               // Customize the data associated with each photo URL
               const photoData = {
                 url: photoUrlMinio,
@@ -398,7 +398,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
                 //description: 'Description of the photo',
                 //otherData: 'Other data related to the photo',
               };
-              
+              productUrls.push(photoData);
              
             } catch (error) {
               console.error('Error generating pre-signed URL:', error);
