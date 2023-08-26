@@ -398,7 +398,7 @@ adminRouter.get('/products/:product_id',adminTokenValidator,async(req,res)=>{//Ã
                 //description: 'Description of the photo',
                 //otherData: 'Other data related to the photo',
               };
-              photoN.push(obj.data);
+              
              
             } catch (error) {
               console.error('Error generating pre-signed URL:', error);
