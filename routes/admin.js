@@ -453,8 +453,8 @@ adminRouter.put('/products/:product_id',adminTokenValidator,async(req,res)=>{
     try {
         const product_id=req.params.product_id;
         const adminToken=req.admin;
-        const {product_name,price,discount,description,isProductOfTheWeek}=req.body;
-        await pool.query('UPDATE products SET product_name=$1,price=$2,discount=$3,description=$4,isProductOfTheWeek=$5 WHERE product_id=$6',[product_name,price,discount,description,isProductOfTheWeek,product_id]);
+        const {product_name,price,discount,description,isproductoftheweek}=req.body;
+        await pool.query('UPDATE products SET product_name=$1,price=$2,discount=$3,description=$4,isProductOfTheWeek=$5 WHERE product_id=$6',[product_name,price,discount,description,isproductoftheweek,product_id]);
         return res.status(200).json({message:'Başarıyla Güncellendi',adminToken});
     } catch (error) {
         console.error(error);
@@ -503,18 +503,16 @@ adminRouter.delete('/delete-customer/:customer_id',adminTokenValidator,async(req
 adminRouter.put('/update-product/:product_id', adminTokenValidator, async (req, res) => {
     try {
         const  product_id  = req.params.product_id;
-        const updatedFeature = req.body; // Assuming the request body is an array of JSON objects
+        const {color,size,quantity}=req.body;
         const adminToken=req.admin;
         //updatedFeature : [{newSize:'XL',newQuantity:17,newColor:'mor'},{newSize:'XLL',newQuantity:11,newColor:'pembe'},{newSize:'L',newQuantity:15,newColor:'sarı'}]
-        for (const feature of updatedFeature) {
-            const newQuantity = feature.newQuantity;
-            const newSize = feature.newSize;
-            const newColor=feature.newColor;
-                const sizeResult=await pool.query('SELECT size_id from sizes Where size=$1',[newSize]);
-                const colorResult=await pool.query('SELECT color_id from colors Where color=$1',[newColor]);
-                const size_id=sizeResult.rows[0].size_id;
-                const color_id=colorResult.rows[0].color_id;
-                await pool.query('UPDATE feature SET quantity=$1 WHERE product_id=$2 and size_id=$3,and color_id=$4 ', [newQuantity, product_id,size_id,color_id]);
+        
+        const sizeResult=await pool.query('SELECT size_id from sizes Where size=$1',[size]);
+        const colorResult=await pool.query('SELECT color_id from colors Where color=$1',[color]);
+        const size_id=sizeResult.rows[0].size_id;
+        const color_id=colorResult.rows[0].color_id;
+        const newQuantity = parseInt(quantity);
+        await pool.query('UPDATE feature SET quantity=$1 WHERE product_id=$2 and size_id=$3 and color_id=$4 ', [newQuantity, product_id,size_id,color_id]);
             /*
                 const existingFeature = await pool.query('SELECT * FROM feature F,size S WHERE F.product_id=$1 AND S.size=$2 AND F.size_id=S.size_id', [product_id, newSize]);
 
@@ -528,7 +526,7 @@ adminRouter.put('/update-product/:product_id', adminTokenValidator, async (req, 
                     await pool.query('INSERT INTO feature(product_id, size_id, quantity) VALUES($1, $2, $3)', [product_id, size, newQuantity]);
                 }*/
             
-        }
+        
 
         return res.status(200).json({
             adminToken,
