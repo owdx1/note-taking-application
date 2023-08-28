@@ -500,7 +500,7 @@ adminRouter.delete('/delete-customer/:customer_id',adminTokenValidator,async(req
 
 
 // genel ürün güncelleme
-adminRouter.put('/update-product/:product_id', adminTokenValidator, async (req, res) => {
+adminRouter.put('/update-product/:product_id', adminTokenValidator, async (req, res) => {  
     try {
         const  product_id  = req.params.product_id;
         const {color,size,quantity}=req.body;

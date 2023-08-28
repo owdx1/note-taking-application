@@ -34,6 +34,7 @@ photoRouter.post('/file' ,upload.single('file'), (req, res) => {
   const bucketName = categories[firstLetter];
   console.log(firstLetter);
   console.log(bucketName);
+  console.log("file nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", fileName);
   // Upload file to Minio
   minioClient.putObject(bucketName, fileName, file.buffer, (err, etag) => {
     if (err) {

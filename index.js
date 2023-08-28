@@ -10,8 +10,9 @@ const accessTokenValidator = require('./middlewares/accessTokenValidator');
 const refreshTokenValidator = require('./middlewares/refreshTokenValidator');
 const bcrypt = require('bcrypt');
 const photoRouter=require('./routes/foto')
-
+//const { exec } = require('child_process');
 const app = express();
+//const path = require('path');
 
 app.use(cors())
 app.use(express.json())
@@ -101,6 +102,39 @@ app.get('/product-num',accessTokenValidator,refreshTokenValidator,async(req,res)
         return res.status(500).send('Server error');
     }
 });
+
+
+
+
+
+
+
+
+
+
+/*
+
+const minioExePath = path.join(__dirname, '..', '..', '..', 'minio.exe');
+const minioServerCommand = `"${minioExePath}" server C:\\minio --console-address :9090`;
+
+const minioServerProcess = exec(minioServerCommand, {
+    cwd: path.join(__dirname, '..', '..', '..', 'note-taking-application') 
+});
+
+minioServerProcess.stdout.on('data', (data) => {
+    console.log(`Minio Server: ${data}`);
+});
+
+minioServerProcess.stderr.on('data', (data) => {
+    console.error(`Minio Server Error: ${data}`);
+});
+
+minioServerProcess.on('close', (code) => {
+    console.log(`Minio Server exited with code ${code}`);
+});
+
+*/
+
 
 
 
